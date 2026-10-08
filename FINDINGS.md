@@ -90,7 +90,37 @@ Practical takeaway: the fastest mirror is `git clone` / ZIP download of these 8 
 
 ## 9. Open questions
 
-- Do we want full binary mirror (multiple GiB: rdojo 748 MiB + pestle 528 MiB + dl/repo trees) or metadata-first + on-demand download?
-- Cloudflare approach: manual clearance-cookie paste vs automated Playwright solver?
+- Do we want full binary mirror (multiple GiB confirmed: rdojo ~900 MiB, pestle 1.1 GiB, rdojo-old 616 MiB, village 125 MiB — see §10) or metadata-first + on-demand download?
+- Cloudflare approach: manual clearance-cookie paste vs automated Playwright solver? Headless Chrome alone does NOT pass (§11).
 - `_pda`/Drive-private links: skip on 403 or use authenticated personal accounts?
-- `ibresources.cc` replacement: Wayback mirror list, or drop the source?
+- Village `*.questionData.js` payloads are AES-encrypted (`U2FsdGVkX1...`); key lives in obfuscated `main.js`. Decrypt offline or drive the frontend in a browser?
+
+## 10. Local clone analysis (2026-10-08, tmp clones outside repo)
+
+All 8 `git.pirateib.sh/pirateIB/*` repos clone cleanly over HTTPS with `--depth 1` — no auth, no challenge. Giants are heavy and `--filter=blob:none` is NOT honored (Forgejo fetches full blobs anyway: pestle pulled ~500 MiB post-filter). Sizes on disk:
+
+| Repo | Size | Stack / notes |
+|------|------|---------------|
+| `pirateib-website` | 4.2 MiB | Static hub. `index.html` (93 lines), `ibnotes/`, `mypnotes/`, `marxify/`, `resguide/`, `announce/`, `assets/`. `robots.txt` = `Allow: /`. Meta keywords confirm lineage: `ibdocs2, IB Documents (2) Team, r/pirateIB`. Commented-out traces: WhatsApp/Instagram links, N25 exam-pack ZIP (`DOWNLOAD REPO - ZIPS/N25 exam pack.zip`, 0.8 GB), Tor mirror (`./tor` + `onion.png`) |
+| `pirateib-repo` | 276 KiB | TinyFileManager **v2.5.3** single `files/index.php` (2561 lines). `APP_TITLE='pirateIB Repository'`, `$use_auth=false`, `$global_readonly=true`, `$root_path='.'`, `$exclude_items=('*.php','sitemap.xml','robots.txt','download.html')`, upload cap 5 GB / 2 MB chunks. Path addressing = `$_GET['p']` → `fm_clean_path($p)` (line 348-356) — crawler pattern: enumerate `?p=<path>`, parse listing table, recurse. `compose.yml` = `dunglas/frankenphp:latest`, `SERVER_NAME=:8080`, `./files:/app/public:ro,noexec,nosuid,nodev`, `no-new-privileges`, `cap_drop: ALL + NET_BIND_SERVICE`, 1 CPU / 512 MiB. `Caddyfile`: `admin off`, `:8080 root /app/public + php_server` |
+| `pirateib-git` | 260 KiB | `docker-compose.yml` = Forgejo `codeberg.org/forgejo/forgejo:12` + `custom-conf`/`custom-public` mounts, `network_mode: container:wireguard`, sidecar `cloudflare/cloudflared tunnel run --token … --protocol http2`. Public self-host = WireGuard + Cloudflare Tunnel |
+| `svgtopng-cli` | 204 KiB | Real tool, not a stub. Batch SVG→PNG via headless Chromium (Playwright), browser-faithful render (not native rasterizer). `node dist/cli.js`, `-o/-W/-H/-t/-m/-f/-b/-c/-z/-j` flags, default height 1400, 16k px cap. Used "for pirating some books" (screenshot-style raster path — relevant if we hit SVG-only books) |
+| `village` | 125 MiB | `src/` = 243 files: ~200 `*.questionData.js` webpack chunks + fonts + `index.html` + `main.js`. Payloads are **AES-encrypted** (`(self.webpackChunkrevisionvillage...).push([[1002],{1002:V=>{V.exports="U2FsdGVkX19..."}}})` — OpenSSL `Salted__` base64). `main.js` is obfuscated. `index.html`: canonical `https://village.pirateib.su/`, keywords `revision town, revision village, pirateib village, revision village crack, revision village free, revision village archive`, description "pirateIB Village is a free archive of Revision Village IB resources. Formerly called Revision Town." |
+| `pestle` | 1.1 GiB | `app/index.html` + `app/index.js` (QB UI: topic combine, markscheme/report modals, PDF-gen buttons), `assets/jsonqb/` = **22 files, 498 MiB**: `Biology/Chemistry/Physics 2025 QB merged+split`, legacy per-subject (`Biology/Chemistry/Physics/Business/Econ/ESS/Geo/History/Psych/SEHS/CS/DT/Digital Society/Math AA+AI QB.json`) + `README.txt` (topic-prefix notes for Psych/Geo/History syllabus splits). QB record = `{Question: HTML with base64-embedded PNGs, …}` — base64 images explain size. `assets/uploads/` = 24 MiB user uploads. `OPEN PESTLE - WINDOWS.exe` + `INSTRUCTIONS FOR MAC-LINUX.txt` = offline launcher |
+| `rdojo` | ~916 MiB, checkout incomplete (reset timed out) | Vite + React 19 + Tailwind 4 + react-router + `@react-pdf-viewer` + fuse.js + jszip (`packages/central`, `public`, `src`). Treat as present-but-unverified; re-clone with big timeout when needed |
+| `rdojo-old` | 616 MiB | Same Vite/React shape (`revisiondojo3`, `render.yaml`, `Dockerfile`). Archived predecessor |
+
+`resguide/index.html` (110 lines) is the best machine-readable corpus map — exact `dl.*` paths: `DOWNLOAD REPO - ZIPS/` (Oct 2025) + `Full repo (you might not need this)/` (Feb 2025), `IB OFFICIAL EE EXEMPLARS/`, `IB QUESTIONBANKS/` v4 (`4. Fourth Edition - TOPIC`, ≤2018) / v5 (`5. Fifth Edition - TOPIC`, `5. Fifth Edition - PAPER/HTML`, 2018-2022) / v6 (`6. Sixth Edition - 2025 Sciences`, Econ/Chem/Bio/Phy), `StudyIB/`, `ThinkIB/`, `SaveMyExams - Notes/`, `smearchive.pages.dev`, `revisiontown2024.pages.dev`, `pestle.pages.dev` (v5+v6) + `pestle-ib.firebaseapp.com` (v4), plus paywall-unlock tooling list (LibSTC/Anna's/Sci-Hub/LibGen, Scribd/Studocu/Issuu/CourseHero/Chegg downloaders).
+
+## 11. Browser probe (Chrome DevTools, headless)
+
+- `GET repo.pirateib.sh/` in real Chromium → Cloudflare managed challenge, French locale ("Vérification de sécurité en cours … se protéger contre les bots malveillants"), Ray ID `a47586f49f36702d`. 30 s wait: **no auto-resolve**, no Turnstile widget to click. Same `cf-mitigated: challenge` as curl for `dl.*`, `repo.*`, `dojo`, `village`, `arrib.cc`, `dynamicrepo.sbs`, `sufferingrepo.me`.
+- Conclusion: file/app hosts need either a non-headless session with clearance cookies (manual paste → reuse in crawler) or a solver (Playwright stealth + Turnstile handling). Budget this as its own work item; curl/`requests` alone will never pass.
+- Counterpoint: static Pages frontends are OPEN — `pestle.pages.dev` (QB landing, links `app/index.html`) fetched fine with plain HTTP. Prefer `*.pages.dev` / `*.firebaseapp.com` origins over challenged `*.pirateib.sh` where content overlaps.
+
+## 12. ibresources.cc — HTML dead, API alive
+
+- `/`, `/mirrors`, `/mirrors2` still empty via curl (origin down or blocking datacenter UAs).
+- Wayback capture 2026-05-05 of `/mirrors2` recovered the mirror table + pointed at the JSON API. **Live API works today**: `GET https://ibresources.cc/api/v2/mirrors` (deprecated → successor `/api/v3/mirrors`, `Link: </api/v3/mirrors>; rel="successor-version"`) and `/api/v3/mirrors` both return 200 JSON with per-mirror `status` + `uptime`.
+- Current v3 list (all `online`): `dl.pirateib.su`, `dl.pirateib.sh`, `arrib.cc` (IBDocs Backup 2), `repo.pirateib.su`, `repo.pirateib.sh`, `dynamicrepo.sbs`, `sufferingrepo.me` (uptimes 99.7–100). **DoxxIB (`doxxib.pp.ua`) is gone** — present in May Wayback, absent from v2+v3 today, and the host returns empty (dead). Drop it; keep polling the API for list changes.
+- Crawler use: poll `/api/v3/mirrors` for discovery/health instead of scraping HTML; probe each mirror with a real browser session (all non-`dl`/`repo` mirrors are Cloudflare-challenged too).
