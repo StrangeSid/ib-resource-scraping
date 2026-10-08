@@ -1,38 +1,60 @@
 # ib-resource-scraping
 
-Defragmented local compilation of IB resources from across the web.
-Research in `FINDINGS.md`. Code here applies it.
+One searchable local compilation of IB resources from across the web —
+past papers, markschemes, grade boundaries, question banks, notes —
+instead of a dozen disconnected mirrors.
 
-## Layout
+Research notes live in [`FINDINGS.md`](FINDINGS.md). History in [`CHANGELOG.md`](CHANGELOG.md).
 
-- `ib_scrape/` — connectors + content-addressed store
-- `scripts/gather.py` — CLI entry
-- `manifests/` — committed JSON (what exists, where, hashes)
-- `store/` — local only (gitignored): `blobs/` + `index.sqlite`
+## How it works
 
-## Use
+Connectors gather catalog records and files into a content-addressed store
+(`store/blobs/` + `store/index.sqlite`, sha256-deduped). A FastAPI backend
+serves structured search over everything indexed.
 
-```sh
-pip install -r requirements.txt
-python scripts/gather.py --only mirrors,ibnotes --store store
-python scripts/gather.py --only wp --search "grade boundaries" --limit 10
-python scripts/gather.py --only wp --limit 50   # bulk media crawl
-python scripts/gather.py --only ibdocs --ibdocs-year 2025 --ibdocs-session may-2025
+```
+sources ──▶ connectors ──▶ store/ ──▶ FTS index ──▶ API (:8471)
+  WP REST      wp_rest.py      blobs/      index_fts.py    /search
+  ibdocs.re    ibdocs.py       index.sqlite  FTS5 porter   /resources/{sha}
+  pirateib.sh  ibnotes.py      manifests/↗ committed       /download/{sha}
+  mirrors API  mirror_api.py                               /mirrors /links
+  git host     git_mirror.py                               /stats /recent
+  TFM repos    tfm.py (needs clearance cookies)
 ```
 
-## API (backend first; UI + MCP later)
+> [!NOTE]
+> `store/` is local-only (gitignored). `manifests/` (catalog JSON) is committed.
+
+## Quickstart
 
 ```sh
-uvicorn api.main:app --port 8471
+python3 -m venv .venv
+./.venv/bin/pip install -r requirements.txt
+./.venv/bin/python scripts/gather.py --only mirrors,ibnotes --store store
+./.venv/bin/python scripts/gather.py --only wp --search "grade boundaries" --limit 10
+./.venv/bin/python scripts/gather.py --only ibdocs --ibdocs-year 2025 --ibdocs-session may-2025
+./.venv/bin/python -m uvicorn api.main:app --port 8471
+```
+
+```sh
 curl "localhost:8471/search?q=grade+boundaries"
 curl "localhost:8471/search?q=physics&kind=remote"
-curl localhost:8471/stats
-curl "localhost:8471/links?platform=google_drive"
-curl localhost:8471/mirrors
+curl localhost:8471/recent?limit=5
 ```
 
-Structured JSON everywhere: `{status, data, meta}`.
+Cloudflare hosts (`repo.*`, `dl.*`, mirrors) need a manual solve first —
+export cookies (Netscape format), then:
 
-Cloudflare hosts (`repo.*`, `dl.*`, mirrors) need clearance cookies first:
-solve once in a normal browser, export cookies (Netscape format),
-then `python scripts/gather.py --only tfm --cookies cookies.txt`.
+```sh
+./.venv/bin/python scripts/gather.py --only tfm --tfm-host https://repo.pirateib.sh \
+  --cookies cookies.txt --tfm-path "IB DOCUMENTS" --limit 20
+```
+
+## Tests
+
+```sh
+./.venv/bin/pip install -r requirements-dev.txt
+./.venv/bin/python -m pytest tests/ -q
+```
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). License: GPLv3 — see [`LICENSE`](LICENSE).

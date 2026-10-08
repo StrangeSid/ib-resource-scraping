@@ -78,3 +78,12 @@ def test_tfm_403_needs_cookies():
         raise AssertionError("should raise")
     except RuntimeError as e:
         assert "403" in str(e)
+
+
+def test_tfm_list_parses_subpaths():
+    c = tfm.TFMClient("https://repo.pirateib.sh")
+    html = ('<a href="?p=IB+BOOKS">x</a> <input name="p" value="y">'
+            '<a href="index.php?p=IB+DOCS&x=1">z</a>')
+    c.s.get = MagicMock(return_value=_resp(text=html))
+    subs = c.list("IB DOCUMENTS")
+    assert "IB+BOOKS" in subs and "IB+DOCS" in subs

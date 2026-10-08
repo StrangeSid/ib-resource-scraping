@@ -58,3 +58,9 @@ def test_404s(client):
 def test_mirrors_and_links(client):
     assert client.get("/mirrors").json()["data"][0]["name"] == "m1"
     assert client.get("/links").json()["data"] == []
+
+
+def test_recent_and_stats_indexed(client):
+    r = client.get("/recent", params={"limit": 5}).json()
+    assert r["meta"]["count"] == 1 and r["data"][0]["filename"] == "grade-test"
+    assert client.get("/stats").json()["data"]["indexed"] == 1

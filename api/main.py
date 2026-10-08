@@ -45,7 +45,20 @@ def stats():
     except sqlite3.OperationalError:
         return ok({"files": 0, "bytes": 0})
     return ok({"files": files[0], "bytes": files[1], "by_source": by_src,
-               "remote_catalog": remote, "links": links})
+               "remote_catalog": remote, "links": links,
+               "indexed": files[0] + remote + links})
+
+
+@app.get("/recent")
+def recent(limit: int = 20):
+    con = db()
+    try:
+        rows = [dict(r) for r in con.execute(
+            "SELECT sha256,source,url,filename,size,fetched_at FROM files"
+            " ORDER BY fetched_at DESC LIMIT ?", (limit,))]
+    except sqlite3.OperationalError:
+        rows = []
+    return ok(rows, limit=limit, count=len(rows))
 
 
 @app.get("/search")

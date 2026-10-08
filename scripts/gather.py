@@ -11,7 +11,7 @@ import requests
 from ib_scrape import config
 from ib_scrape.store import Store
 from ib_scrape import index_fts
-from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, git_mirror, ibdocs
+from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, git_mirror, ibdocs, tfm
 
 
 def main():
@@ -23,6 +23,9 @@ def main():
     ap.add_argument("--limit", type=int, default=10, help="max WP downloads")
     ap.add_argument("--ibdocs-year", default="2025")
     ap.add_argument("--ibdocs-session", default="may-2025")
+    ap.add_argument("--cookies", default=None, help="Netscape cookie jar for TFM hosts")
+    ap.add_argument("--tfm-host", default="https://repo.pirateib.sh")
+    ap.add_argument("--tfm-path", default="")
     ap.add_argument("--manifests", default="manifests")
     args = ap.parse_args()
 
@@ -63,6 +66,11 @@ def main():
         recs = ibdocs.crawl_session(args.ibdocs_year, args.ibdocs_session, s)
         (mdir / f"ibdocs_{args.ibdocs_year}.json").write_text(json.dumps(recs, indent=1))
         print("ibdocs records:", len(recs))
+
+    if "tfm" in only:
+        client = tfm.TFMClient(args.tfm_host, args.cookies)
+        for sub in client.list(args.tfm_path):
+            print("tfm:", sub)
 
     print("manifest rows:", store.manifest(str(mdir / "index.json")))
     print("fts rows:", index_fts.build(args.store, args.manifests))

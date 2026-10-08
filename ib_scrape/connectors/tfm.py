@@ -24,8 +24,10 @@ class TFMClient:
         if r.status_code == 403:
             raise RuntimeError(f"403 on {self.host} — clearance cookies missing/expired")
         r.raise_for_status()
-        # TFM renders rows with data-path entries; harvest subpaths
-        return sorted(set(re.findall(r"[\"']p=([^\"'&]+)[\"'&]", r.text)))
+        # TFM addresses paths as ?p=<path> links + hidden <input name="p">
+        subs = set(re.findall(r"[?&]p=([^\"'&]+)", r.text))
+        subs.update(re.findall(r'name="p"\s+value="([^"]+)"', r.text))
+        return sorted(subs)
 
     def download(self, remote_path, store, filename=None):
         r = self.s.get(self.host + "/" + remote_path.lstrip("/"), timeout=300)
