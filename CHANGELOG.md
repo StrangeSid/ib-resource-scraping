@@ -8,6 +8,10 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 - `GET /recent` (latest local files), `stats.indexed` total, `gather --only tfm`
   with `--cookies/--tfm-host/--tfm-path`, fixed TFM `?p=` subpath parsing.
 - `LICENSE` (GPLv3), `CONTRIBUTING.md`, README refresh (create-readme skill).
+- `gather --only wp --wp-index-only`: 4504-record WP catalog without bytes (FTS 5188).
+- `drive.py`: folder/file ID parse, export URLs, API-key listing, confirm-token download.
+- Village probe: payloads decrypted in-page by bundled CryptoJS; key derived via
+  `atob()` at call site — needs runtime hook to dump plaintext (next).
 
 ## 2026-10-08 — Tests: 15 pytest covering store, connectors, FTS index, API (`921ba07`)
 

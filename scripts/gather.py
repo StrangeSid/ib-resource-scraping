@@ -26,6 +26,8 @@ def main():
     ap.add_argument("--cookies", default=None, help="Netscape cookie jar for TFM hosts")
     ap.add_argument("--tfm-host", default="https://repo.pirateib.sh")
     ap.add_argument("--tfm-path", default="")
+    ap.add_argument("--wp-index-only", action="store_true",
+                    help="catalog WP media without downloading bytes")
     ap.add_argument("--manifests", default="manifests")
     args = ap.parse_args()
 
@@ -47,17 +49,23 @@ def main():
 
     if "wp" in only:
         n = 0
-        for item in wp_rest.iter_media(search=args.search, session=s):
-            if n >= args.limit:
-                break
-            try:
-                path, new = wp_rest.download_item(item, store, s)
-            except Exception as e:
-                print("skip", item.get("slug"), str(e)[:100])
-                continue
-            n += 1
-            print(("new " if new else "dup "), item.get("slug"), path)
-        print("wp downloaded:", n)
+        if args.wp_index_only:
+            recs = [wp_rest.catalog_item(i)
+                    for i in wp_rest.iter_media(search=args.search, session=s)]
+            (mdir / "wp_media.json").write_text(json.dumps(recs, indent=1))
+            print("wp catalog:", len(recs))
+        else:
+            for item in wp_rest.iter_media(search=args.search, session=s):
+                if n >= args.limit:
+                    break
+                try:
+                    path, new = wp_rest.download_item(item, store, s)
+                except Exception as e:
+                    print("skip", item.get("slug"), str(e)[:100])
+                    continue
+                n += 1
+                print(("new " if new else "dup "), item.get("slug"), path)
+            print("wp downloaded:", n)
 
     if "git" in only:
         print(git_mirror.mirror(Path(args.store) / "git"))

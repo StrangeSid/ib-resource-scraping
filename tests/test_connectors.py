@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, ibdocs, tfm
+from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, ibdocs, tfm, drive
 
 
 def _resp(json_data=None, text="", status=200, headers=None):
@@ -87,3 +87,23 @@ def test_tfm_list_parses_subpaths():
     c.s.get = MagicMock(return_value=_resp(text=html))
     subs = c.list("IB DOCUMENTS")
     assert "IB+BOOKS" in subs and "IB+DOCS" in subs
+
+
+def test_wp_catalog_item():
+    rec = wp_rest.catalog_item({"source_url": "http://x/f.pdf", "slug": "f",
+                                "mime_type": "application/pdf",
+                                "filesize": 42, "date": "2026-07-21T00:00:00"})
+    assert rec["year"] == "2026" and rec["size"] == "42"
+
+
+def test_drive_ids_and_export():
+    assert drive.folder_id("https://drive.google.com/drive/folders/ABC123_-x") == "ABC123_-x"
+    assert drive.file_id("https://drive.google.com/file/d/XYZ/view") == "XYZ"
+    assert drive.export_url("XYZ").endswith("id=XYZ")
+    import os
+    os.environ.pop("DRIVE_API_KEY", None)
+    try:
+        drive.list_folder("ABC", api_key=None, session=MagicMock())
+        raise AssertionError("should raise")
+    except RuntimeError:
+        pass

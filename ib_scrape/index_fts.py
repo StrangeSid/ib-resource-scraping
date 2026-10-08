@@ -26,6 +26,13 @@ def build(store_root, manifests_dir):
             [(r["url"], "ibdocs", r["name"], r["size"], str(r.get("year", "")),
               r.get("session", ""), r.get("parent", ""), now)
              for r in json.loads(cat.read_text())])
+    wp = mdir / "wp_media.json"
+    if wp.exists():
+        db.executemany(
+            "INSERT OR IGNORE INTO remote_files VALUES (?,?,?,?,?,?,?,?)",
+            [(r["url"], "brilliantlearning", r["name"], r.get("size", ""),
+              r.get("year", ""), "", "", now)
+             for r in json.loads(wp.read_text()) if r.get("url")])
     db.execute("DROP TABLE IF EXISTS fts")
     db.execute("CREATE VIRTUAL TABLE fts USING fts5(kind, title, url, source,"
                " subject, extra, tokenize='porter')")

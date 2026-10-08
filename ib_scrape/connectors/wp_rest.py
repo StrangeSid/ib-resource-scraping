@@ -19,6 +19,17 @@ def iter_media(search=None, per_page=100, max_pages=100, session=None):
         page += 1
 
 
+def catalog_item(item):
+    """Lightweight record (no bytes) for the remote catalog."""
+    return {"url": item.get("source_url") or "",
+            "name": item.get("slug") or "",
+            "size": str(item.get("filesize") or item.get("media_details", {})
+                        .get("filesize", "")),
+            "year": (item.get("date") or "")[:4],
+            "session": "", "parent": "", "source": "brilliantlearning",
+            "mime": item.get("mime_type", "")}
+
+
 def download_item(item, store, session=None):
     url = item.get("source_url") or ""
     if not url:
