@@ -7,6 +7,8 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 
 - Dropped `ibdocs_2025.json` (60/60 URLs inside `ibdocs_all.json`), purged pycache.
 - RevisionHub recon: Clerk-gated, no public API — connector blocked on account.
+- Recon batch: inkstall (SPA), qb-b8c59 (routes unknown), ibresources.lol dead,
+  openslum flaky, edcrate dead.
 
 ## 2026-10-09 — Tests to 29 green (`6261052`)
 

@@ -157,3 +157,14 @@ All 8 `git.pirateib.sh/pirateIB/*` repos clone cleanly over HTTPS with `--depth 
 - `/search?q=` and subject pages redirect to `/sign-up` without session.
   Same class as RevisionDojo PRO: needs a donated/logged-in account before
   any connector is possible. Logged, not built.
+
+## 17. Recon batch 2026-10-09 (all leads, no connectors yet)
+
+- `papers.xtremepape.rs` done (see CHANGELOG) — best open source so far.
+- `inkstall.in/ib-past-papers/` = gateway to `inkstall.com` (tuition SPA, 66 KB,
+  not WordPress). Papers behind JS routes — needs browser recon.
+- `questionbank-b8c59.web.app` (IB QB v4): static landing (bootstrap/jquery),
+  app routes unknown (`/questionbank`, `/main.html` 404). Needs route discovery.
+- `ibresources.lol/mirror`: 511 B, empty — dead.
+- `openslum.org`: curl 200 but requests/fetch fail (TLS flaky) — deferred.
+- `edcrate.com`: dead (000).
