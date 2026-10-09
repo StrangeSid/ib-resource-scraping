@@ -11,8 +11,8 @@ import requests
 from .. import config
 
 ROW_RE = re.compile(r"<tr.*?</tr>", re.S)
-HREF_RE = re.compile(r'<a href="(\?p=[^"]+)"[^>]*title="([^"]+)"')
-TEXT_RE = re.compile(r"<a[^>]*>(.*?)</a>", re.S)
+LINK_RE = re.compile(r'<a href="(\?p=[^"]+)"([^>]*)>(.*?)</a>', re.S)
+TITLE_RE = re.compile(r'title="([^"]+)"')
 SIZE_RE = re.compile(r'data-order="b-(\d+)"')
 DIRECT_RE = re.compile(r'title="Direct link" href="([^"]+)"')
 TAG_RE = re.compile(r"<[^>]+>")
@@ -42,12 +42,15 @@ class TFMClient:
         for row in ROW_RE.findall(r.text):
             if "?p=" not in row or "..</a>" in row:
                 continue
-            m = HREF_RE.search(row)
+            m = LINK_RE.search(row)
             if not m:
                 continue
-            href, title = m.groups()
+            href, attrs, inner = m.groups()
+            tm = TITLE_RE.search(attrs)
+            name = (tm.group(1) if tm else TAG_RE.sub("", inner)).strip()
+            if not name:
+                continue
             base = href.split("&")[0][3:]  # ?p=<path>, drop &view/&dl
-            name = title.strip() or TAG_RE.sub("", TEXT_RE.search(row).group(1)).strip()
             size = SIZE_RE.search(row)
             dm = DIRECT_RE.search(row)
             out.append({"name": name, "path": unquote_plus(base),

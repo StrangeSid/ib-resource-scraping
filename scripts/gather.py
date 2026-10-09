@@ -30,6 +30,7 @@ def main():
                     help="auto-solve CF via SeleniumBase UC (trial-only dep)")
     ap.add_argument("--tfm-crawl", action="store_true",
                     help="BFS crawl TFM tree (catalog + downloads up to --limit)")
+    ap.add_argument("--tfm-max", type=int, default=200)
     ap.add_argument("--tfm-host", default="https://repo.pirateib.sh")
     ap.add_argument("--tfm-path", default="")
     ap.add_argument("--wp-index-only", action="store_true",
@@ -94,7 +95,8 @@ def main():
         else:
             client = tfm.TFMClient(args.tfm_host, args.cookies)
         if args.tfm_crawl:
-            recs = client.crawl(args.tfm_path, store=store, dl_limit=args.limit)
+            recs = client.crawl(args.tfm_path, store=store, dl_limit=args.limit,
+                                max_pages=args.tfm_max)
             safe = "".join(c if c.isalnum() else "_" for c in
                            (args.tfm_path or "ROOT")).strip("_")
             (mdir / f"tfm_{safe}.json").write_text(json.dumps(recs))

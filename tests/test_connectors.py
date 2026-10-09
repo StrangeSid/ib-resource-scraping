@@ -208,6 +208,8 @@ def test_tfm_custom_session_keeps_headers():
 TFM_HTML = ('<tr> <td><a href="?p="><i class="fa fa-chevron"></i> ..</a></td></tr>'
             '<tr> <td data-sort=X> <a href="?p=ROOT+SUB" title="SUB">'
             '<i class="fa fa-folder-o"></i> SUB </a> </td></tr>'
+            '<tr> <td data-sort=Y> <a href="?p=ROOT+SUB2">'
+            '<i class="fa fa-folder-o"></i> SUB2 </a> </td></tr>'
             '<tr> <td data-sort="a.pdf"> <a href="?p=ROOT&amp;view=a.pdf" title="a.pdf">'
             '<i class="fa fa-file-pdf-o"></i> a.pdf </a> </td>'
             '<td data-order="b-100"><span>100 B</span></td>'
@@ -219,9 +221,10 @@ def test_tfm_list_full():
     c = tfm.TFMClient("https://h")
     c.s.get = MagicMock(return_value=_resp(text=TFM_HTML))
     rows = c.list_full("ROOT")
-    assert len(rows) == 2
-    d, f = rows
+    assert len(rows) == 3
+    d, d2, f = rows
     assert d["is_dir"] and d["path"] == "ROOT SUB" and d["size"] == 0
+    assert d2["is_dir"] and d2["name"] == "SUB2" and d2["path"] == "ROOT SUB2"
     assert not f["is_dir"] and f["size"] == 100
     assert f["direct"] == "https://h/ROOT/a.pdf"
 
@@ -242,7 +245,7 @@ def test_tfm_crawl_downloads(tmp_path):
     c.s.get.side_effect = fake_get
     st = Store(tmp_path / "store")
     recs = c.crawl("ROOT", store=st, dl_limit=5, log=lambda *a: None)
-    assert len(recs) == 2
+    assert len(recs) == 3
     n = st.db.execute("SELECT COUNT(*) FROM files").fetchone()[0]
     assert n == 1
 
