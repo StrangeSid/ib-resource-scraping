@@ -9,6 +9,8 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 - `mirror_api.snapshot` retries with backoff + v2 fallback; mirror API flapping
   (connection resets) as of 2026-10-09 — cached snapshot preserved on failure.
 - Bytes policy: catalog-first, proof-scale bytes only.
+- ibdocs full sweep 2010–2026 (`--ibdocs-all`): 622 catalog records, FTS 5750.
+- Village host throttled (~1.5 KB/s, 880K per 10 min) — clone infeasible now; retry later.
 
 ## 2026-10-09 — MCP server + 21 tests (`de83dc1`)
 
