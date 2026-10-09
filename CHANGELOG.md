@@ -3,14 +3,23 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
-## Unreleased
+## 2026-10-09 — ibdocs sweep log, village throttle note (`82366fb`)
+
+- Village host throttled (~1.5 KB/s, 880K per 10 min) — clone infeasible now; retry later.
+
+## 2026-10-09 — ibdocs full catalog (`60a669a`)
+
+- ibdocs full sweep 2010–2026 (`--ibdocs-all`): 622 catalog records, FTS 5750.
+
+## 2026-10-09 — Robustness + policy (`56fea6c`)
+
+- `mirror_api.snapshot` retries with backoff + v2 fallback; mirror API flapping
+  (connection resets) — cached snapshot preserved on failure.
+- Bytes policy: catalog-first, proof-scale bytes only.
+
+## 2026-10-09 — Cleanup round 1 (`814557c`)
 
 - Cleanup: compacted manifests (−49k lines), dead-code purge, sanitize pass.
-- `mirror_api.snapshot` retries with backoff + v2 fallback; mirror API flapping
-  (connection resets) as of 2026-10-09 — cached snapshot preserved on failure.
-- Bytes policy: catalog-first, proof-scale bytes only.
-- ibdocs full sweep 2010–2026 (`--ibdocs-all`): 622 catalog records, FTS 5750.
-- Village host throttled (~1.5 KB/s, 880K per 10 min) — clone infeasible now; retry later.
 
 ## 2026-10-09 — MCP server + 21 tests (`de83dc1`)
 

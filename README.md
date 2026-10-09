@@ -13,13 +13,14 @@ Connectors gather catalog records and files into a content-addressed store
 serves structured search over everything indexed.
 
 ```
-sources ──▶ connectors ──▶ store/ ──▶ FTS index ──▶ API (:8471)
+sources ──▶ connectors ──▶ store/ ──▶ FTS index ──▶ API (:8471) / MCP (stdio)
   WP REST      wp_rest.py      blobs/      index_fts.py    /search
   ibdocs.re    ibdocs.py       index.sqlite  FTS5 porter   /resources/{sha}
   pirateib.sh  ibnotes.py      manifests/↗ committed       /download/{sha}
   mirrors API  mirror_api.py                               /mirrors /links
   git host     git_mirror.py                               /stats /recent
   TFM repos    tfm.py (needs clearance cookies)
+  Google Drive drive.py (needs DRIVE_API_KEY)
 ```
 
 > [!NOTE]
@@ -32,8 +33,10 @@ python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
 ./.venv/bin/python scripts/gather.py --only mirrors,ibnotes --store store
 ./.venv/bin/python scripts/gather.py --only wp --search "grade boundaries" --limit 10
-./.venv/bin/python scripts/gather.py --only ibdocs --ibdocs-year 2025 --ibdocs-session may-2025
+./.venv/bin/python scripts/gather.py --only wp --wp-index-only   # catalog, no bytes
+./.venv/bin/python scripts/gather.py --only ibdocs --ibdocs-all  # 2010–2026 catalog
 ./.venv/bin/python -m uvicorn api.main:app --port 8471
+./.venv/bin/python mcp_server.py   # stdio, for agents
 ```
 
 ```sh
@@ -47,7 +50,7 @@ export cookies (Netscape format), then:
 
 ```sh
 ./.venv/bin/python scripts/gather.py --only tfm --tfm-host https://repo.pirateib.sh \
-  --cookies cookies.txt --tfm-path "IB DOCUMENTS" --limit 20
+  --cookies cookies.txt --tfm-path "IB DOCUMENTS"
 ```
 
 ## Tests
