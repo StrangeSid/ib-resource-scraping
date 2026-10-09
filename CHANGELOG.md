@@ -5,8 +5,8 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 
 ## Unreleased
 
-- XtremePapers connector (`xtreme.py`): fdscript `dirpath` BFS, direct PDF links,
-  header-sniff fix, `+`/space normalization, root containment. 2025 sweep: 2085 records.
+- Full XtremePapers IB sweep: 23,593 paper+markscheme records, FTS 29,343.
+  Removed superseded 2025-only manifest. `--xtreme-max` flag.
 
 ## 2026-10-09 — ibdocs sweep log, village throttle note (`82366fb`)
 

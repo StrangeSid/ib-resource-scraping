@@ -24,6 +24,7 @@ def main():
     ap.add_argument("--ibdocs-session", default="may-2025")
     ap.add_argument("--ibdocs-all", action="store_true")
     ap.add_argument("--xtreme-root", default="./IB/")
+    ap.add_argument("--xtreme-max", type=int, default=500)
     ap.add_argument("--cookies", default=None, help="Netscape cookie jar for TFM hosts")
     ap.add_argument("--tfm-host", default="https://repo.pirateib.sh")
     ap.add_argument("--tfm-path", default="")
@@ -86,7 +87,7 @@ def main():
             print("tfm:", sub)
 
     if "xtreme" in only:
-        recs = xtreme.crawl(args.xtreme_root, s)
+        recs = xtreme.crawl(args.xtreme_root, s, max_pages=args.xtreme_max)
         safe = "".join(c if c.isalnum() else "_" for c in args.xtreme_root).strip("_") or "IB"
         (mdir / f"xtreme_{safe}.json").write_text(json.dumps(recs))
         print("xtreme records:", len(recs))

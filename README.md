@@ -36,6 +36,7 @@ python3 -m venv .venv
 ./.venv/bin/python scripts/gather.py --only wp --search "grade boundaries" --limit 10
 ./.venv/bin/python scripts/gather.py --only wp --wp-index-only   # catalog, no bytes
 ./.venv/bin/python scripts/gather.py --only ibdocs --ibdocs-all  # 2010–2026 catalog
+./.venv/bin/python scripts/gather.py --only xtreme --xtreme-root "./IB/" --xtreme-max 3000
 ./.venv/bin/python -m uvicorn api.main:app --port 8471
 ./.venv/bin/python mcp_server.py   # stdio, for agents
 ```
