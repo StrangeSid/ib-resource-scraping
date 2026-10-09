@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from ib_scrape.store import Store
 from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, ibdocs, tfm, drive
 
 
@@ -35,7 +36,6 @@ def test_wp_iter_media_pagination():
 
 
 def test_wp_download_item(tmp_path):
-    from ib_scrape.store import Store
     s = MagicMock()
     r = _resp()
     r.content = b"%PDF"

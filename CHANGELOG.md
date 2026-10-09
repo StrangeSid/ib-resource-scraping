@@ -3,19 +3,24 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
-## Unreleased
+## 2026-10-09 — MCP server + 21 tests (`de83dc1`)
 
 - MCP server (`mcp_server.py`, stdio): search/resource/stats/mirrors/links tools
   over the same index. Pinned `mcp<2` (v2 renamed FastMCP, breaks API).
 - Village re-clone throttled (host slow, tmp purged) — decrypt probe deferred.
 
-- `GET /recent` (latest local files), `stats.indexed` total, `gather --only tfm`
-  with `--cookies/--tfm-host/--tfm-path`, fixed TFM `?p=` subpath parsing.
-- `LICENSE` (GPLv3), `CONTRIBUTING.md`, README refresh (create-readme skill).
+## 2026-10-08 — WP catalog, Drive connector, decrypt probe (`6b8c2a1`)
+
 - `gather --only wp --wp-index-only`: 4504-record WP catalog without bytes (FTS 5188).
 - `drive.py`: folder/file ID parse, export URLs, API-key listing, confirm-token download.
 - Village probe: payloads decrypted in-page by bundled CryptoJS; key derived via
   `atob()` at call site — needs runtime hook to dump plaintext (next).
+
+## 2026-10-08 — Docs, license, `/recent`, TFM wiring (`e5a64f1`)
+
+- `GET /recent` (latest local files), `stats.indexed` total, `gather --only tfm`
+  with `--cookies/--tfm-host/--tfm-path`, fixed TFM `?p=` subpath parsing.
+- `LICENSE` (GPLv3), `CONTRIBUTING.md`, README refresh (create-readme skill).
 
 ## 2026-10-08 — Tests: 15 pytest covering store, connectors, FTS index, API (`921ba07`)
 

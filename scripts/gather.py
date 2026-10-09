@@ -8,7 +8,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import requests
 
-from ib_scrape import config
 from ib_scrape.store import Store
 from ib_scrape import index_fts
 from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, git_mirror, ibdocs, tfm

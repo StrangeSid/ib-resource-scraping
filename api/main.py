@@ -86,7 +86,7 @@ def resource(sha: str):
     if not r:
         raise HTTPException(404, "unknown sha256")
     d = dict(r)
-    d["local"] = blob_path(d["sha256"], d["filename"]) is not None
+    d["local"] = blob_path(d["sha256"]) is not None
     return ok(d)
 
 
@@ -96,17 +96,16 @@ def download(sha: str):
     r = con.execute("SELECT * FROM files WHERE sha256=?", (sha,)).fetchone()
     if not r:
         raise HTTPException(404, "unknown sha256")
-    p = blob_path(r["sha256"], r["filename"])
+    p = blob_path(r["sha256"])
     if not p:
         raise HTTPException(404, "not downloaded locally",
                             headers={"X-Source-URL": r["url"]})
     return FileResponse(p, filename=r["filename"])
 
 
-def blob_path(sha, filename):
-    for cand in (STORE / "blobs" / sha[:2] / sha[2:4]).glob(sha + "-*"):
-        return str(cand)
-    return None
+def blob_path(sha):
+    hits = sorted((STORE / "blobs" / sha[:2] / sha[2:4]).glob(sha + "-*"))
+    return str(hits[0]) if hits else None
 
 
 @app.get("/mirrors")
