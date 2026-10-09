@@ -5,6 +5,10 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 
 ## Unreleased
 
+- MCP server (`mcp_server.py`, stdio): search/resource/stats/mirrors/links tools
+  over the same index. Pinned `mcp<2` (v2 renamed FastMCP, breaks API).
+- Village re-clone throttled (host slow, tmp purged) — decrypt probe deferred.
+
 - `GET /recent` (latest local files), `stats.indexed` total, `gather --only tfm`
   with `--cookies/--tfm-host/--tfm-path`, fixed TFM `?p=` subpath parsing.
 - `LICENSE` (GPLv3), `CONTRIBUTING.md`, README refresh (create-readme skill).
