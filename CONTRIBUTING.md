@@ -12,6 +12,8 @@ python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt -r requirem
 - Every new connector ships with mocked-HTTP tests (`tests/test_connectors.py`); no live network in tests.
 - Every new endpoint ships with a TestClient test (`tests/test_api.py`).
 - `gather.py` stays offline-safe: record-first, download only with explicit `--limit`.
+- Bytes policy: catalog-first (index metadata for everything, fetch bytes on demand
+  or proof-scale). No bulk binary crawls without explicit sign-off.
 - Manifests in `manifests/` are committed; blobs in `store/` never are (gitignored).
 - Research notes go in `FINDINGS.md`; user docs in `README.md`; history in `CHANGELOG.md`.
 - License: GPLv3. New files keep the project license; no incompatible dependencies.

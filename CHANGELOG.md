@@ -3,6 +3,13 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
+## Unreleased
+
+- Cleanup: compacted manifests (−49k lines), dead-code purge, sanitize pass.
+- `mirror_api.snapshot` retries with backoff + v2 fallback; mirror API flapping
+  (connection resets) as of 2026-10-09 — cached snapshot preserved on failure.
+- Bytes policy: catalog-first, proof-scale bytes only.
+
 ## 2026-10-09 — MCP server + 21 tests (`de83dc1`)
 
 - MCP server (`mcp_server.py`, stdio): search/resource/stats/mirrors/links tools

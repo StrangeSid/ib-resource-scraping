@@ -27,6 +27,16 @@ def test_mirror_api_v3_first():
     assert snap["_api"].endswith("/v3/mirrors")
 
 
+def test_mirror_api_retries_then_v2():
+    s = MagicMock()
+    err = ConnectionError("reset")
+    ok = _resp({"mirrors": []})
+    s.get.side_effect = [err, err, err, ok]
+    snap = mirror_api.snapshot(s, retries=3)
+    assert snap["_api"].endswith("/v2/mirrors")
+    assert s.get.call_count == 4
+
+
 def test_wp_iter_media_pagination():
     s = MagicMock()
     s.get.return_value = _resp([{"slug": "a"}], headers={"X-WP-TotalPages": "1"})
