@@ -33,6 +33,11 @@ def build(store_root, manifests_dir):
             [(r["url"], "brilliantlearning", r["name"], r.get("size", ""),
               r.get("year", ""), "", "", now)
              for r in json.loads(wp.read_text()) if r.get("url")])
+    for cat in sorted(mdir.glob("xtreme_*.json")):
+        db.executemany(
+            "INSERT OR IGNORE INTO remote_files VALUES (?,?,?,?,?,?,?,?)",
+            [(r["url"], "xtreme", r["name"], "", "", "", r.get("dirpath", ""), now)
+             for r in json.loads(cat.read_text())])
     db.execute("DROP TABLE IF EXISTS fts")
     db.execute("CREATE VIRTUAL TABLE fts USING fts5(kind, title, url, source,"
                " subject, extra, tokenize='porter')")

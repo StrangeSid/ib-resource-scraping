@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ib_scrape.store import Store
-from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, ibdocs, tfm, drive
+from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, ibdocs, tfm, drive, xtreme
 
 
 def _resp(json_data=None, text="", status=200, headers=None):
@@ -98,6 +98,30 @@ def test_ibdocs_crawl_all_skips_404():
     s.get.side_effect = fake_get
     recs = ibdocs.crawl_all(years=[2025], session=s, log=lambda *a: None)
     assert len(recs) == 1 and recs[0]["session"] == "may-2025"
+
+
+def test_xtreme_list_dir():
+    html = ('<a href="index.php?dirpath=./IB/X/&order=0" class="directory">[X]</a>'
+            '<a href="IB/X/a_paper_1_TZ1_HL.pdf">f</a>')
+    s = MagicMock()
+    s.get.return_value = _resp(text=html)
+    dirs, files = xtreme.list_dir("./IB/", s)
+    assert dirs[0]["dirpath"] == "./IB/X/"
+    assert files[0]["url"].endswith("a_paper_1_TZ1_HL.pdf")
+
+
+def test_xtreme_crawl_bfs():
+    pages = {"./IB/": ('<a href="index.php?dirpath=./IB/X/&order=0">[X]</a>', ""),
+             "./IB/X/": ("", '<a href="IB/X/f.pdf">f</a>')}
+    s = MagicMock()
+
+    def fake_get(url, params=None, timeout=30):
+        d, f = pages[params["dirpath"]]
+        return _resp(text=d + f)
+
+    s.get.side_effect = fake_get
+    recs = xtreme.crawl("./IB/", s, log=lambda *a: None)
+    assert len(recs) == 1 and recs[0]["source"] == "xtreme"
 
 
 def test_tfm_403_needs_cookies():

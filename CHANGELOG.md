@@ -3,6 +3,11 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
+## Unreleased
+
+- XtremePapers connector (`xtreme.py`): fdscript `dirpath` BFS, direct PDF links,
+  header-sniff fix, `+`/space normalization, root containment. 2025 sweep: 2085 records.
+
 ## 2026-10-09 — ibdocs sweep log, village throttle note (`82366fb`)
 
 - Village host throttled (~1.5 KB/s, 880K per 10 min) — clone infeasible now; retry later.
