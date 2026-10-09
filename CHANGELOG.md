@@ -10,6 +10,8 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 - TFM BFS crawl live (`--tfm-crawl`): list_full parser (dirs/files/sizes/
   direct links), 29 boundaries downloaded, cross-source sha256 dedup.
 - Full repo.* catalog: 19,601 records (`--tfm-max`), title-less dir fix, FTS 48,982.
+- SKILL.md (agent entry) + DOCS.md (architecture, API, chain, troubleshooting).
+- Full dl.* catalog: 8597 records. FTS 58,616.
 - Tests to 37: cffi session, cookie-file jar, title-less dirs, import cleanup.
 - Dufs connector (`dufs.py`, `?json` API): dl IB BOOKS proof, 1282 records,
   same UC+cffi chain. FTS 50,264. 38 tests.
