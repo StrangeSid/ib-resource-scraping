@@ -7,7 +7,8 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 
 - UC chain live: harvest → curl_cffi chrome-TLS → TFM listing via
   `gather --only tfm --uc-harvest`. Binding = cookies + UA + TLS triple.
-  Fixed TFMClient clobbering injected session UA (live 403 root cause).
+- TFM BFS crawl live (`--tfm-crawl`): list_full parser (dirs/files/sizes/
+  direct links), 29 boundaries downloaded, cross-source sha256 dedup.
 - Recon batch: inkstall (SPA), qb-b8c59 (routes unknown), ibresources.lol dead,
   openslum flaky, edcrate dead.
 
