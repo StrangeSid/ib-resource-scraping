@@ -19,7 +19,9 @@ ROW_RE = re.compile(
 def list_page(url, session=None):
     s = session or requests.Session()
     s.headers.update(config.UA)
-    html = s.get(url, timeout=30).text
+    r = s.get(url, timeout=30)
+    r.raise_for_status()
+    html = r.text
     out = []
     for href, title, size in ROW_RE.findall(html):
         out.append({"url": urljoin(BASE, href), "name": unquote(title),
@@ -44,3 +46,21 @@ def crawl_session(year, session_slug, session=None, max_pages=200):
             if row["is_dir"]:
                 queue.append(row["url"])
     return recs
+
+
+def crawl_all(years=range(2010, 2027), session=None, log=print):
+    """Every year × session slug. Missing sessions (404) skipped."""
+    s = session or requests.Session()
+    all_recs = []
+    for year in years:
+        yy = str(year)[2:]
+        for slug in (f"may-{year}", f"november-{year}",
+                     f"more-papers-m{yy}", f"more-papers-n{yy}"):
+            try:
+                recs = crawl_session(year, slug, s)
+            except Exception as e:
+                log(f"skip {year}/{slug}: {str(e)[:80]}")
+                continue
+            log(f"{year}/{slug}: {len(recs)}")
+            all_recs.extend(recs)
+    return all_recs

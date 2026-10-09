@@ -80,6 +80,26 @@ def test_ibdocs_list_page():
     assert rows[1]["url"].endswith("f.pdf")
 
 
+def test_ibdocs_crawl_all_skips_404():
+    import requests as rq
+    s = MagicMock()
+
+    def fake_get(url, timeout=30):
+        if "may-2025" in url and "IB%20X" not in url:
+            return _resp(text='<a href="/F" class="file-row"><span class="file-name">'
+                              '<span title="F">F</span></span>'
+                              '<span class="file-size">-</span></a>')
+        if url == "https://ibdocs.re/F":
+            return _resp(text="")
+        r = _resp(status=404)
+        r.raise_for_status.side_effect = rq.HTTPError("404")
+        return r
+
+    s.get.side_effect = fake_get
+    recs = ibdocs.crawl_all(years=[2025], session=s, log=lambda *a: None)
+    assert len(recs) == 1 and recs[0]["session"] == "may-2025"
+
+
 def test_tfm_403_needs_cookies():
     c = tfm.TFMClient("https://repo.pirateib.sh")
     c.s.get = MagicMock(return_value=_resp(status=403))

@@ -22,6 +22,7 @@ def main():
     ap.add_argument("--limit", type=int, default=10, help="max WP downloads")
     ap.add_argument("--ibdocs-year", default="2025")
     ap.add_argument("--ibdocs-session", default="may-2025")
+    ap.add_argument("--ibdocs-all", action="store_true")
     ap.add_argument("--cookies", default=None, help="Netscape cookie jar for TFM hosts")
     ap.add_argument("--tfm-host", default="https://repo.pirateib.sh")
     ap.add_argument("--tfm-path", default="")
@@ -70,8 +71,12 @@ def main():
         print(git_mirror.mirror(Path(args.store) / "git"))
 
     if "ibdocs" in only:
-        recs = ibdocs.crawl_session(args.ibdocs_year, args.ibdocs_session, s)
-        (mdir / f"ibdocs_{args.ibdocs_year}.json").write_text(json.dumps(recs, indent=1))
+        if args.ibdocs_all:
+            recs = ibdocs.crawl_all(session=s)
+            (mdir / "ibdocs_all.json").write_text(json.dumps(recs, indent=1))
+        else:
+            recs = ibdocs.crawl_session(args.ibdocs_year, args.ibdocs_session, s)
+            (mdir / f"ibdocs_{args.ibdocs_year}.json").write_text(json.dumps(recs, indent=1))
         print("ibdocs records:", len(recs))
 
     if "tfm" in only:
