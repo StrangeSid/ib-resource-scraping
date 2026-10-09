@@ -5,8 +5,8 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 
 ## Unreleased
 
-- Full XtremePapers IB sweep: 23,593 paper+markscheme records, FTS 29,343.
-  Removed superseded 2025-only manifest. `--xtreme-max` flag.
+- Test gaps filled: xtreme containment/max-pages/search/download, drive
+  confirm-token download, TFM download. 29 green.
 
 ## 2026-10-09 — ibdocs sweep log, village throttle note (`82366fb`)
 

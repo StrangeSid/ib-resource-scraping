@@ -161,3 +161,67 @@ def test_drive_ids_and_export():
         raise AssertionError("should raise")
     except RuntimeError:
         pass
+
+
+def test_drive_download_direct_and_confirm(tmp_path):
+    from ib_scrape.store import Store
+    st = Store(tmp_path / "store")
+    s = MagicMock()
+    pdf = _resp(text="...", headers={"Content-Type": "application/pdf",
+                                     "Content-Disposition": 'attachment; filename="q.pdf"'})
+    pdf.content = b"%PDF"
+    s.get.return_value = pdf
+    path, new = drive.download_file("ABC", st, s)
+    assert new and Path(path).name.endswith("q.pdf")
+    # confirm interstitial then file
+    inter = _resp(text="confirm=CF9x", headers={"Content-Type": "text/html"})
+    s.get.side_effect = [inter, pdf]
+    path2, _ = drive.download_file("DEF", st, s)
+    assert s.get.call_count == 3  # 1 direct + interstitial + confirmed
+    assert Path(path2).read_bytes() == b"%PDF"
+
+
+def test_tfm_download(tmp_path):
+    from ib_scrape.store import Store
+    st = Store(tmp_path / "store")
+    c = tfm.TFMClient("https://repo.pirateib.sh")
+    r = _resp(text="x")
+    r.content = b"data"
+    c.s.get = MagicMock(return_value=r)
+    path, new = c.download("IB/a.pdf", st)
+    assert new and Path(path).name.endswith("a.pdf")
+
+
+def test_xtreme_containment_and_max_pages():
+    seen_pages = []
+
+    def fake_get(url, params=None, timeout=30):
+        dp = params["dirpath"]
+        seen_pages.append(dp)
+        if dp == "./IB/":
+            return _resp(text='<a href="index.php?dirpath=./CAIE/&order=0">[C]</a>'
+                              '<a href="index.php?dirpath=./IB/X/&order=0">[X]</a>')
+        return _resp(text="")
+
+    s = MagicMock()
+    s.get.side_effect = fake_get
+    recs = xtreme.crawl("./IB/", s, log=lambda *a: None)
+    assert "./CAIE/" not in seen_pages and recs == []
+    # max_pages respected
+    seen_pages.clear()
+    xtreme.crawl("./IB/", s, max_pages=1, log=lambda *a: None)
+    assert seen_pages == ["./IB/"]
+
+
+def test_xtreme_search_and_download(tmp_path):
+    from ib_scrape.store import Store
+    s = MagicMock()
+    s.get.return_value = _resp(text='<a href="IB/X/paper.pdf">p</a>')
+    hits = xtreme.search("./IB/X/", "paper", s)
+    assert hits[0]["url"].endswith("paper.pdf")
+    st = Store(tmp_path / "store")
+    r = _resp(text="x")
+    r.content = b"%PDF-1"
+    s.get.return_value = r
+    path, new = xtreme.download(hits[0]["url"], st, s)
+    assert new and Path(path).read_bytes() == b"%PDF-1"
