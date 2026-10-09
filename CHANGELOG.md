@@ -7,6 +7,11 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 
 - Dropped `ibdocs_2025.json` (60/60 URLs inside `ibdocs_all.json`), purged pycache.
 
+## 2026-10-09 — Tests to 29 green (`6261052`)
+
+- Gaps filled: xtreme containment/max-pages/search/download, drive
+  confirm-token download, TFM download.
+
 ## 2026-10-09 — ibdocs sweep log, village throttle note (`82366fb`)
 
 - Village host throttled (~1.5 KB/s, 880K per 10 min) — clone infeasible now; retry later.
