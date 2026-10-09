@@ -28,6 +28,8 @@ def main():
     ap.add_argument("--cookies", default=None, help="Netscape cookie jar for TFM hosts")
     ap.add_argument("--uc-harvest", action="store_true",
                     help="auto-solve CF via SeleniumBase UC (trial-only dep)")
+    ap.add_argument("--tfm-crawl", action="store_true",
+                    help="BFS crawl TFM tree (catalog + downloads up to --limit)")
     ap.add_argument("--tfm-host", default="https://repo.pirateib.sh")
     ap.add_argument("--tfm-path", default="")
     ap.add_argument("--wp-index-only", action="store_true",
@@ -91,8 +93,15 @@ def main():
             client = tfm.TFMClient(args.tfm_host, session=sess)
         else:
             client = tfm.TFMClient(args.tfm_host, args.cookies)
-        for sub in client.list(args.tfm_path):
-            print("tfm:", sub)
+        if args.tfm_crawl:
+            recs = client.crawl(args.tfm_path, store=store, dl_limit=args.limit)
+            safe = "".join(c if c.isalnum() else "_" for c in
+                           (args.tfm_path or "ROOT")).strip("_")
+            (mdir / f"tfm_{safe}.json").write_text(json.dumps(recs))
+            print("tfm records:", len(recs))
+        else:
+            for sub in client.list(args.tfm_path):
+                print("tfm:", sub)
 
     if "xtreme" in only:
         recs = xtreme.crawl(args.xtreme_root, s, max_pages=args.xtreme_max)

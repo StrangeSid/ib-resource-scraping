@@ -205,6 +205,49 @@ def test_tfm_custom_session_keeps_headers():
     assert c.s.headers["User-Agent"] == "REAL-UA"
 
 
+TFM_HTML = ('<tr> <td><a href="?p="><i class="fa fa-chevron"></i> ..</a></td></tr>'
+            '<tr> <td data-sort=X> <a href="?p=ROOT+SUB" title="SUB">'
+            '<i class="fa fa-folder-o"></i> SUB </a> </td></tr>'
+            '<tr> <td data-sort="a.pdf"> <a href="?p=ROOT&amp;view=a.pdf" title="a.pdf">'
+            '<i class="fa fa-file-pdf-o"></i> a.pdf </a> </td>'
+            '<td data-order="b-100"><span>100 B</span></td>'
+            '<td class="inline-actions"> <a title="Direct link"'
+            ' href="https://h/ROOT/a.pdf"><i></i></a> </td> </tr>')
+
+
+def test_tfm_list_full():
+    c = tfm.TFMClient("https://h")
+    c.s.get = MagicMock(return_value=_resp(text=TFM_HTML))
+    rows = c.list_full("ROOT")
+    assert len(rows) == 2
+    d, f = rows
+    assert d["is_dir"] and d["path"] == "ROOT SUB" and d["size"] == 0
+    assert not f["is_dir"] and f["size"] == 100
+    assert f["direct"] == "https://h/ROOT/a.pdf"
+
+
+def test_tfm_crawl_downloads(tmp_path):
+    from ib_scrape.store import Store
+    c = tfm.TFMClient("https://h")
+    pages = {"ROOT": TFM_HTML, "ROOT SUB": ""}
+    c.s.get = MagicMock(side_effect=lambda u, **k: _resp(
+        text=pages.get(k["params"]["p"], "")))
+    dl_resp = _resp(text="x")
+    dl_resp.content = b"PDF"
+
+    def fake_get(u, **k):
+        if "params" in k:
+            return _resp(text=pages.get(k["params"]["p"], ""))
+        return dl_resp
+
+    c.s.get.side_effect = fake_get
+    st = Store(tmp_path / "store")
+    recs = c.crawl("ROOT", store=st, dl_limit=5, log=lambda *a: None)
+    assert len(recs) == 2
+    n = st.db.execute("SELECT COUNT(*) FROM files").fetchone()[0]
+    assert n == 1
+
+
 def test_uc_harvest_mocked():
     import sys as _sys
 
