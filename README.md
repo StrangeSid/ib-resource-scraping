@@ -1,72 +1,86 @@
 # ib-resource-scraping
 
-One searchable local compilation of IB resources from across the web —
+One searchable local index of IB resources from across the web —
 past papers, markschemes, grade boundaries, question banks, notes —
 instead of a dozen disconnected mirrors.
 
-Research notes live in [`FINDINGS.md`](FINDINGS.md). History in [`CHANGELOG.md`](CHANGELOG.md).
-
-## How it works
-
-Connectors gather catalog records and files into a content-addressed store
-(`store/blobs/` + `store/index.sqlite`, sha256-deduped). A FastAPI backend
-serves structured search over everything indexed.
-
-```
-sources ──▶ connectors ──▶ store/ ──▶ FTS index ──▶ API (:8471) / MCP (stdio)
-  WP REST      wp_rest.py      blobs/      index_fts.py    /search
-  ibdocs.re    ibdocs.py       index.sqlite  FTS5 porter   /resources/{sha}
-  pirateib.sh  ibnotes.py      manifests/↗ committed       /download/{sha}
-  mirrors API  mirror_api.py                               /mirrors /links
-  git host     git_mirror.py                               /stats /recent
-  TFM repos    tfm.py (needs clearance cookies)
-  Google Drive drive.py (needs DRIVE_API_KEY)
-  XtremePapers xtreme.py (open fdscript browser)
-```
-
 > [!NOTE]
-> `store/` is local-only (gitignored). `manifests/` (catalog JSON) is committed.
+> Catalog-first: metadata for everything, bytes on demand or proof-scale.
+> `store/` stays local (gitignored); `manifests/` catalogs are committed.
+
+## Sources
+
+| Source | Connector | Access |
+|---|---|---|
+| pirateIB repo (`repo.*`, TinyFileManager) | `tfm.py` + `uc_harvest.py` | UC auto-solve, then plain crawl |
+| IBDocs repo (`dl.*`, Dufs) | `dufs.py` | Same UC chain, `?json` API |
+| XtremePapers (fdscript) | `xtreme.py` | Open, direct PDF links |
+| ibdocs.re catalog | `ibdocs.py` | Open, SSR rows |
+| brilliantlearning.in | `wp_rest.py` | Open WP REST (incl. `_pda` URLs) |
+| pirateib.sh/ibnotes | `ibnotes.py` | Open link graph (623 links) |
+| Mirror health | `mirror_api.py` | Open JSON API |
+| Google Drive | `drive.py` | `DRIVE_API_KEY` |
+| pirateIB git | `git_mirror.py` | Open clone |
+
+Research log: [`FINDINGS.md`](FINDINGS.md) · Agent skill: [`skill/SKILL.md`](skill/SKILL.md) ·
+Full docs: [`DOCS.md`](DOCS.md) · History: [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Quickstart
 
 ```sh
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
+```
+
+Gather catalogs (no bytes):
+
+```sh
 ./.venv/bin/python scripts/gather.py --only mirrors,ibnotes --store store
-./.venv/bin/python scripts/gather.py --only wp --search "grade boundaries" --limit 10
-./.venv/bin/python scripts/gather.py --only wp --wp-index-only   # catalog, no bytes
-./.venv/bin/python scripts/gather.py --only ibdocs --ibdocs-all  # 2010–2026 catalog
+./.venv/bin/python scripts/gather.py --only wp --wp-index-only
+./.venv/bin/python scripts/gather.py --only ibdocs --ibdocs-all
 ./.venv/bin/python scripts/gather.py --only xtreme --xtreme-root "./IB/" --xtreme-max 3000
-./.venv/bin/python -m uvicorn api.main:app --port 8471
-./.venv/bin/python mcp_server.py   # stdio, for agents
+./.venv/bin/python scripts/gather.py --only dufs --uc-harvest --dufs-host https://dl.pirateib.sh
 ```
 
+Download proof-scale bytes:
+
 ```sh
-curl "localhost:8471/search?q=grade+boundaries"
-curl "localhost:8471/search?q=physics&kind=remote"
-curl localhost:8471/recent?limit=5
+./.venv/bin/python scripts/gather.py --only wp --search "grade boundaries" --limit 10
 ```
 
-Cloudflare hosts (`repo.*`, `dl.*`, mirrors): auto-solve via UC harvest,
-or manual solve + cookies:
+Cloudflare hosts (auto-solve needs trial-only `seleniumbase` + `curl_cffi`):
 
 ```sh
-# auto-solve (needs trial-only deps below)
 ./.venv/bin/python scripts/gather.py --only tfm --uc-harvest \
-  --tfm-host https://repo.pirateib.sh --tfm-path "IB DOCUMENTS" \
-  --tfm-crawl --limit 30
+  --tfm-host https://repo.pirateib.sh --tfm-crawl --limit 0
 # or manual solve + exported cookies
 ./.venv/bin/python scripts/gather.py --only tfm --tfm-host https://repo.pirateib.sh \
   --cookies cookies.txt --tfm-path "IB DOCUMENTS"
 ```
 
-Trial-only browser deps (not in requirements.txt): `seleniumbase`, `curl_cffi`.
+## API
+
+```sh
+./.venv/bin/python -m uvicorn api.main:app --port 8471
+./.venv/bin/python mcp_server.py   # stdio, for agents
+```
+
+| Route | Example |
+|---|---|
+| `GET /search?q=&kind=` | `curl "localhost:8471/search?q=grade+boundaries"` |
+| `GET /resources/{sha}` | record + `local` flag |
+| `GET /download/{sha}` | bytes, or 404 + `X-Source-URL` |
+| `GET /mirrors` | `?refresh=true` to re-poll |
+| `GET /links?q=&platform=` | ibnotes graph |
+| `GET /stats`, `/recent`, `/health` | index totals, latest, liveness |
+
+Every response: `{status, data, meta}`.
 
 ## Tests
 
 ```sh
 ./.venv/bin/pip install -r requirements-dev.txt
-./.venv/bin/python -m pytest tests/ -q
+./.venv/bin/python -m pytest tests/ -q   # 38 green, no live network
 ```
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md). License: GPLv3 — see [`LICENSE`](LICENSE).
