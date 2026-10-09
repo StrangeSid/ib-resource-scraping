@@ -44,6 +44,12 @@ def build(store_root, manifests_dir):
             [(r["url"], r.get("source", "tfm"), r["name"], r.get("size", ""),
               "", "", r.get("parent", ""), now)
              for r in json.loads(cat.read_text())])
+    for cat in sorted(mdir.glob("dufs_*.json")):
+        db.executemany(
+            "INSERT OR IGNORE INTO remote_files VALUES (?,?,?,?,?,?,?,?)",
+            [(r["url"], r.get("source", "dufs"), r["name"], r.get("size", ""),
+              "", "", r.get("parent", ""), now)
+             for r in json.loads(cat.read_text())])
     db.execute("DROP TABLE IF EXISTS fts")
     db.execute("CREATE VIRTUAL TABLE fts USING fts5(kind, title, url, source,"
                " subject, extra, tokenize='porter')")

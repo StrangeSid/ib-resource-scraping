@@ -8,7 +8,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ib_scrape.store import Store
-from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, ibdocs, tfm, drive, xtreme, uc_harvest
+from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, ibdocs, tfm, drive, xtreme, uc_harvest, dufs
 
 
 def _resp(json_data=None, text="", status=200, headers=None):
@@ -340,6 +340,36 @@ def test_xtreme_search_and_download(tmp_path):
     s.get.return_value = r
     path, new = xtreme.download(hits[0]["url"], st, s)
     assert new and Path(path).read_bytes() == b"%PDF-1"
+
+
+DUFS_JSON = {"href": "/IB BOOKS/", "paths": [
+    {"path_type": "Dir", "name": "Sub", "mtime": 1, "size": 0},
+    {"path_type": "File", "name": "b.pdf", "mtime": 2, "size": 50}]}
+
+
+def test_dufs_list_and_crawl(tmp_path):
+    from ib_scrape.store import Store
+    root = MagicMock()
+    root.json.return_value = DUFS_JSON
+    root.status_code = 200
+    sub = MagicMock()
+    sub.json.return_value = {"href": "/x", "paths": []}
+    sub.status_code = 200
+    pdf = MagicMock()
+    pdf.status_code = 200
+    pdf.content = b"PDF"
+    pdf.headers = {"Content-Type": "application/pdf"}
+    s = MagicMock()
+    # order: list_json, crawl root list, inline file download, subdir list
+    s.get.side_effect = [root, root, pdf, sub]
+    rows = dufs.list_json("https://h", "IB BOOKS", s)
+    assert len(rows) == 2 and rows[0]["is_dir"] and not rows[1]["is_dir"]
+    assert rows[1]["url"].endswith("b.pdf")
+    st = Store(tmp_path / "store")
+    recs = dufs.crawl("https://h", "IB BOOKS", session=s, store=st,
+                      dl_limit=5, log=lambda *a: None)
+    assert len(recs) == 2
+    assert st.db.execute("SELECT COUNT(*) FROM files").fetchone()[0] == 1
 
 
 def test_uc_cleared_session_cookie_file(tmp_path):

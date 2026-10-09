@@ -10,14 +10,14 @@ import requests
 
 from ib_scrape.store import Store
 from ib_scrape import index_fts
-from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, git_mirror, ibdocs, tfm, xtreme, uc_harvest
+from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, git_mirror, ibdocs, tfm, xtreme, uc_harvest, dufs
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--store", default="store")
     ap.add_argument("--only", default="mirrors,ibnotes,wp",
-                    help="comma list: mirrors,ibnotes,wp,git,ibdocs")
+                    help="comma list: mirrors,ibnotes,wp,git,ibdocs,tfm,xtreme,dufs")
     ap.add_argument("--search", default=None, help="WP media search term")
     ap.add_argument("--limit", type=int, default=10, help="max WP downloads")
     ap.add_argument("--ibdocs-year", default="2025")
@@ -31,6 +31,9 @@ def main():
     ap.add_argument("--tfm-crawl", action="store_true",
                     help="BFS crawl TFM tree (catalog + downloads up to --limit)")
     ap.add_argument("--tfm-max", type=int, default=200)
+    ap.add_argument("--dufs-host", default="https://dl.pirateib.sh")
+    ap.add_argument("--dufs-path", default="")
+    ap.add_argument("--dufs-max", type=int, default=500)
     ap.add_argument("--tfm-host", default="https://repo.pirateib.sh")
     ap.add_argument("--tfm-path", default="")
     ap.add_argument("--wp-index-only", action="store_true",
@@ -110,6 +113,20 @@ def main():
         safe = "".join(c if c.isalnum() else "_" for c in args.xtreme_root).strip("_") or "IB"
         (mdir / f"xtreme_{safe}.json").write_text(json.dumps(recs))
         print("xtreme records:", len(recs))
+
+    if "dufs" in only:
+        if args.uc_harvest:
+            got = uc_harvest.harvest(args.dufs_host)
+            print("harvested cf_clearance")
+            dsess = uc_harvest.cffi_session(got)
+        else:
+            dsess = s
+        recs = dufs.crawl(args.dufs_host, args.dufs_path, session=dsess,
+                          max_pages=args.dufs_max, store=store, dl_limit=args.limit)
+        safe = "".join(c if c.isalnum() else "_" for c in
+                       (args.dufs_path or "ROOT")).strip("_")
+        (mdir / f"dufs_{safe}.json").write_text(json.dumps(recs))
+        print("dufs records:", len(recs))
 
     print("manifest rows:", store.manifest(str(mdir / "index.json")))
     print("fts rows:", index_fts.build(args.store, args.manifests))

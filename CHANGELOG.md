@@ -11,6 +11,8 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
   direct links), 29 boundaries downloaded, cross-source sha256 dedup.
 - Full repo.* catalog: 19,601 records (`--tfm-max`), title-less dir fix, FTS 48,982.
 - Tests to 37: cffi session, cookie-file jar, title-less dirs, import cleanup.
+- Dufs connector (`dufs.py`, `?json` API): dl IB BOOKS proof, 1282 records,
+  same UC+cffi chain. FTS 50,264. 38 tests.
 - Recon batch: inkstall (SPA), qb-b8c59 (routes unknown), ibresources.lol dead,
   openslum flaky, edcrate dead.
 - Tests to 37: cffi session, cookie-file jar, inline-import cleanup.

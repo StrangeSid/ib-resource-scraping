@@ -16,8 +16,10 @@ def harvest(host, wait=25):
     with SB(uc=True, headless=True) as sb:
         sb.open(host + "/")
         sb.sleep(wait)
-        if "pirateIB Repository" not in sb.get_title():
-            raise RuntimeError(f"challenge held: {sb.get_title()}")
+        title = sb.get_title()
+        if any(m in title for m in ("Just a moment", "Un instant",
+                                    "security verification", "Vérification")):
+            raise RuntimeError(f"challenge held: {title}")
         cookies = {c["name"]: c["value"] for c in sb.get_cookies()}
         ua = sb.execute_script("return navigator.userAgent")
     if "cf_clearance" not in cookies:
