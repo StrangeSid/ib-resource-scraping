@@ -21,6 +21,7 @@ sources ──▶ connectors ──▶ store/ ──▶ FTS index ──▶ API 
   git host     git_mirror.py                               /stats /recent
   TFM repos    tfm.py (needs clearance cookies)
   Google Drive drive.py (needs DRIVE_API_KEY)
+  XtremePapers xtreme.py (open fdscript browser)
 ```
 
 > [!NOTE]
