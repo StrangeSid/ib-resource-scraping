@@ -5,8 +5,7 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 
 ## Unreleased
 
-- Test gaps filled: xtreme containment/max-pages/search/download, drive
-  confirm-token download, TFM download. 29 green.
+- Dropped `ibdocs_2025.json` (60/60 URLs inside `ibdocs_all.json`), purged pycache.
 
 ## 2026-10-09 — ibdocs sweep log, village throttle note (`82366fb`)
 
