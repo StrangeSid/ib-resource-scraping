@@ -47,13 +47,20 @@ curl "localhost:8471/search?q=physics&kind=remote"
 curl localhost:8471/recent?limit=5
 ```
 
-Cloudflare hosts (`repo.*`, `dl.*`, mirrors) need a manual solve first —
-export cookies (Netscape format), then:
+Cloudflare hosts (`repo.*`, `dl.*`, mirrors): auto-solve via UC harvest,
+or manual solve + cookies:
 
 ```sh
+# auto-solve (needs trial-only deps below)
+./.venv/bin/python scripts/gather.py --only tfm --uc-harvest \
+  --tfm-host https://repo.pirateib.sh --tfm-path "IB DOCUMENTS" \
+  --tfm-crawl --limit 30
+# or manual solve + exported cookies
 ./.venv/bin/python scripts/gather.py --only tfm --tfm-host https://repo.pirateib.sh \
   --cookies cookies.txt --tfm-path "IB DOCUMENTS"
 ```
+
+Trial-only browser deps (not in requirements.txt): `seleniumbase`, `curl_cffi`.
 
 ## Tests
 

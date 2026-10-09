@@ -3,6 +3,8 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ib_scrape.store import Store
@@ -164,7 +166,6 @@ def test_drive_ids_and_export():
 
 
 def test_drive_download_direct_and_confirm(tmp_path):
-    from ib_scrape.store import Store
     st = Store(tmp_path / "store")
     s = MagicMock()
     pdf = _resp(text="...", headers={"Content-Type": "application/pdf",
@@ -182,7 +183,6 @@ def test_drive_download_direct_and_confirm(tmp_path):
 
 
 def test_tfm_download(tmp_path):
-    from ib_scrape.store import Store
     st = Store(tmp_path / "store")
     c = tfm.TFMClient("https://repo.pirateib.sh")
     r = _resp(text="x")
@@ -227,7 +227,6 @@ def test_tfm_list_full():
 
 
 def test_tfm_crawl_downloads(tmp_path):
-    from ib_scrape.store import Store
     c = tfm.TFMClient("https://h")
     pages = {"ROOT": TFM_HTML, "ROOT SUB": ""}
     c.s.get = MagicMock(side_effect=lambda u, **k: _resp(
@@ -328,7 +327,6 @@ def test_xtreme_containment_and_max_pages():
 
 
 def test_xtreme_search_and_download(tmp_path):
-    from ib_scrape.store import Store
     s = MagicMock()
     s.get.return_value = _resp(text='<a href="IB/X/paper.pdf">p</a>')
     hits = xtreme.search("./IB/X/", "paper", s)
@@ -339,3 +337,19 @@ def test_xtreme_search_and_download(tmp_path):
     s.get.return_value = r
     path, new = xtreme.download(hits[0]["url"], st, s)
     assert new and Path(path).read_bytes() == b"%PDF-1"
+
+
+def test_uc_cleared_session_cookie_file(tmp_path):
+    jar = tmp_path / "cookies.txt"
+    jar.write_text("# Netscape HTTP Cookie File\n"
+                   ".h\tTRUE\t/\tFALSE\t0\tcf_clearance\tZ\n")
+    s = uc_harvest.cleared_session("https://h", cookie_file=str(jar))
+    assert s.cookies.get("cf_clearance") == "Z"
+
+
+def test_uc_cffi_session_offline():
+    cr = pytest.importorskip("curl_cffi.requests")
+    s = uc_harvest.cffi_session({"cookies": {"cf_clearance": "C"}, "ua": "UA-X"})
+    assert s.cookies.get("cf_clearance", "") == "C" or \
+        any(c.value == "C" for c in s.cookies)
+    assert s.headers.get("User-Agent") == "UA-X"
