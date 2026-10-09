@@ -3,8 +3,13 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
-## Unreleased
+## v0.1.0 — 2026-10-09 (first public testing release)
 
+- Searchable local IB index: FastAPI (`/search`, `/resources`, `/download`,
+  `/mirrors`, `/links`, `/stats`, `/recent`) + MCP stdio server, `{status,data,meta}`.
+- Connectors: WP REST (4504 catalog + bytes), ibdocs (622), XtremePapers (23.5k),
+  ibnotes graph (620), mirror API, TFM (cookie-gated), Drive (key-gated), git mirror.
+- FTS5 index, 29,343 rows. 29 pytest green. GPLv3.
 - Dropped `ibdocs_2025.json` (60/60 URLs inside `ibdocs_all.json`), purged pycache.
 - RevisionHub recon: Clerk-gated, no public API — connector blocked on account.
 - Recon batch: inkstall (SPA), qb-b8c59 (routes unknown), ibresources.lol dead,
