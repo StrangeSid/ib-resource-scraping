@@ -1,7 +1,8 @@
 """TinyFileManager (?p=) crawler. Needs clearance cookies for CF hosts.
 
-Solve the challenge once in a normal browser, export cookies in Netscape
-format, pass --cookies. Without valid cookies list() gets HTTP 403.
+Two ways in: --cookies (Netscape jar from manual solve) or --uc-harvest
+(SeleniumBase UC headless auto-solve, proven vs repo.pirateib.sh).
+Without valid cookies list() gets HTTP 403.
 """
 import http.cookiejar as cj
 import re
@@ -10,10 +11,14 @@ from .. import config
 
 
 class TFMClient:
-    def __init__(self, host, cookie_file=None):
+    def __init__(self, host, cookie_file=None, cookie_dict=None, session=None):
         self.host = host.rstrip("/")
-        self.s = requests.Session()
-        self.s.headers.update(config.UA)
+        self.s = session
+        if self.s is None:
+            self.s = requests.Session()
+            self.s.headers.update(config.UA)
+        if cookie_dict:
+            self.s.cookies.update(cookie_dict)
         if cookie_file:
             jar = cj.MozillaCookieJar(cookie_file)
             jar.load(ignore_discard=True, ignore_expires=True)

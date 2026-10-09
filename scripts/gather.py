@@ -10,7 +10,7 @@ import requests
 
 from ib_scrape.store import Store
 from ib_scrape import index_fts
-from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, git_mirror, ibdocs, tfm, xtreme
+from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, git_mirror, ibdocs, tfm, xtreme, uc_harvest
 
 
 def main():
@@ -26,6 +26,8 @@ def main():
     ap.add_argument("--xtreme-root", default="./IB/")
     ap.add_argument("--xtreme-max", type=int, default=500)
     ap.add_argument("--cookies", default=None, help="Netscape cookie jar for TFM hosts")
+    ap.add_argument("--uc-harvest", action="store_true",
+                    help="auto-solve CF via SeleniumBase UC (trial-only dep)")
     ap.add_argument("--tfm-host", default="https://repo.pirateib.sh")
     ap.add_argument("--tfm-path", default="")
     ap.add_argument("--wp-index-only", action="store_true",
@@ -82,7 +84,13 @@ def main():
         print("ibdocs records:", len(recs))
 
     if "tfm" in only:
-        client = tfm.TFMClient(args.tfm_host, args.cookies)
+        if args.uc_harvest:
+            got = uc_harvest.harvest(args.tfm_host)
+            print("harvested cf_clearance")
+            sess = uc_harvest.cffi_session(got)
+            client = tfm.TFMClient(args.tfm_host, session=sess)
+        else:
+            client = tfm.TFMClient(args.tfm_host, args.cookies)
         for sub in client.list(args.tfm_path):
             print("tfm:", sub)
 

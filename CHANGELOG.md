@@ -5,8 +5,9 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 
 ## Unreleased
 
-- Solver survey (4 CF topics) + UC breakthrough: SeleniumBase UC headless
-  passes repo.pirateib.sh; 25-root inventory listed. UC crawler is next.
+- UC chain live: harvest → curl_cffi chrome-TLS → TFM listing via
+  `gather --only tfm --uc-harvest`. Binding = cookies + UA + TLS triple.
+  Fixed TFMClient clobbering injected session UA (live 403 root cause).
 - Recon batch: inkstall (SPA), qb-b8c59 (routes unknown), ibresources.lol dead,
   openslum flaky, edcrate dead.
 

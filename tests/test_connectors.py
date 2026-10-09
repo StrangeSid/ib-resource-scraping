@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ib_scrape.store import Store
-from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, ibdocs, tfm, drive, xtreme
+from ib_scrape.connectors import mirror_api, wp_rest, ibnotes, ibdocs, tfm, drive, xtreme, uc_harvest
 
 
 def _resp(json_data=None, text="", status=200, headers=None):
@@ -190,6 +190,77 @@ def test_tfm_download(tmp_path):
     c.s.get = MagicMock(return_value=r)
     path, new = c.download("IB/a.pdf", st)
     assert new and Path(path).name.endswith("a.pdf")
+
+
+def test_tfm_cookie_dict():
+    c = tfm.TFMClient("https://repo.pirateib.sh", cookie_dict={"cf_clearance": "abc"})
+    assert c.s.cookies.get("cf_clearance") == "abc"
+
+
+def test_tfm_custom_session_keeps_headers():
+    s = MagicMock()
+    s.headers = {"User-Agent": "REAL-UA"}
+    s.cookies = {}
+    c = tfm.TFMClient("https://repo.pirateib.sh", session=s)
+    assert c.s.headers["User-Agent"] == "REAL-UA"
+
+
+def test_uc_harvest_mocked():
+    import sys as _sys
+
+    class _SB:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            m = MagicMock()
+            m.get_title.return_value = "pirateIB Repository"
+            m.get_cookies.return_value = [{"name": "cf_clearance", "value": "C"}]
+            return m
+
+        def __exit__(self, *a):
+            return False
+
+    mod = MagicMock()
+    mod.SB = _SB
+    _sys.modules["seleniumbase"] = mod
+    try:
+        got = uc_harvest.harvest("https://repo.pirateib.sh", wait=0)
+        assert got["cookies"] == {"cf_clearance": "C"}
+        s = uc_harvest.cleared_session("https://repo.pirateib.sh",
+                                       cookie_dict=got["cookies"])
+        assert s.cookies.get("cf_clearance") == "C"
+    finally:
+        del _sys.modules["seleniumbase"]
+
+
+def test_uc_harvest_no_clearance():
+    import sys as _sys
+
+    class _SB:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            m = MagicMock()
+            m.get_title.return_value = "pirateIB Repository"
+            m.get_cookies.return_value = []
+            return m
+
+        def __exit__(self, *a):
+            return False
+
+    mod = MagicMock()
+    mod.SB = _SB
+    _sys.modules["seleniumbase"] = mod
+    try:
+        try:
+            uc_harvest.harvest("https://x", wait=0)
+            raise AssertionError("should raise")
+        except RuntimeError as e:
+            assert "cf_clearance" in str(e)
+    finally:
+        del _sys.modules["seleniumbase"]
 
 
 def test_xtreme_containment_and_max_pages():
