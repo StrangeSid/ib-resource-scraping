@@ -3,22 +3,16 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
-## Unreleased
+## v0.2.0 — 2026-10-09 (production testing release)
 
-- UC chain live: harvest → curl_cffi chrome-TLS → TFM listing via
-  `gather --only tfm --uc-harvest`. Binding = cookies + UA + TLS triple.
-- TFM BFS crawl live (`--tfm-crawl`): list_full parser (dirs/files/sizes/
-  direct links), 29 boundaries downloaded, cross-source sha256 dedup.
-- Full repo.* catalog: 19,601 records (`--tfm-max`), title-less dir fix, FTS 48,982.
-- SKILL.md (agent entry) + DOCS.md (architecture, API, chain, troubleshooting).
-- Full dl.* catalog: 8597 records. FTS 58,616.
-- Tests to 37: cffi session, cookie-file jar, title-less dirs, import cleanup.
-- Dufs connector (`dufs.py`, `?json` API): dl IB BOOKS proof, 1282 records,
-  same UC+cffi chain. FTS 50,264. 38 tests.
-- Recon batch: inkstall (SPA), qb-b8c59 (routes unknown), ibresources.lol dead,
-  openslum flaky, edcrate dead.
-- Tests to 37: cffi session, cookie-file jar, inline-import cleanup.
-- Docs: README UC/crawl usage + trial-only deps note.
+- UC chain live: harvest → curl_cffi chrome-TLS → crawl. Binding = cookies + UA + TLS.
+- TFM BFS crawl (`--tfm-crawl`, `--tfm-max`): list_full parser, title-less dir fix.
+- Full repo.* catalog: 19,601 records. Full dl.* catalog: 8597 records.
+- Dufs connector (`dufs.py`, `?json` API). XtremePapers connector (23,593 records).
+- FTS index: 58,616 rows (31 local files + 57,965 remote + 620 links).
+- SKILL.md + DOCS.md + README polish. 38 pytest green. GPLv3.
+- Recon: RevisionHub (Clerk-gated), inkstall (SPA), qb-b8c59 (routes unknown),
+  ibresources.lol/edcrate dead, openslum flaky, village throttled.
 
 ## v0.1.0 — 2026-10-09 (first public testing release)
 
