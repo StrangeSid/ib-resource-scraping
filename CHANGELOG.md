@@ -3,6 +3,13 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
+## Unreleased
+
+- Solver survey (4 CF topics) + UC breakthrough: SeleniumBase UC headless
+  passes repo.pirateib.sh; 25-root inventory listed. UC crawler is next.
+- Recon batch: inkstall (SPA), qb-b8c59 (routes unknown), ibresources.lol dead,
+  openslum flaky, edcrate dead.
+
 ## v0.1.0 — 2026-10-09 (first public testing release)
 
 - Searchable local IB index: FastAPI (`/search`, `/resources`, `/download`,

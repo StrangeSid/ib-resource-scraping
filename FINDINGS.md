@@ -158,6 +158,28 @@ All 8 `git.pirateib.sh/pirateIB/*` repos clone cleanly over HTTPS with `--depth 
   Same class as RevisionDojo PRO: needs a donated/logged-in account before
   any connector is possible. Logged, not built.
 
+## 18. Solver survey + UC breakthrough (2026-10-09)
+
+- Surveyed 4 topics (`cloudflare-bypass` 353 repos, `challenge-solver`,
+  `turnstile-bypass` 29, `cf-clearance` 34). Shortlist: CloakBrowser (32k★,
+  Playwright drop-in), SeleniumBase UC/CDP (13.1k★, active), Camoufox (11.5k★),
+  patchright (+nodejs, undetected Playwright), zendriver (nodriver async),
+  CloudflareBypassForScraping (DrissionPage), Boterdrop-Solver (FastAPI+Camoufox).
+  Paid-only lane: CapSolver/ZeroCaptcha/Peak/EzSolver APIs. Stale: uc
+  (2024), cloudscraper (JS-challenge era), CloudProxy (2023).
+- **Trial: SeleniumBase UC headless PASSES `repo.pirateib.sh`** (seleniumbase
+  pip, `SB(uc=True, headless=True)`, 25 s wait → title "pirateIB Repository",
+  TFM DOM). Earlier vanilla/stealth/headed selenium all failed — UC's
+  binary+CDP patches are the difference. Trial-only dep (not in requirements).
+- Proof listing via cleared session (`index.php?p=`): 25+ roots — IB BOOKS,
+  IB DOCUMENTS, PAST PAPERS YEAR+SUBJECT, QUESTIONBANKS, GRADE BOUNDARIES,
+  SPECIMEN, SUBJECT GUIDES/REPORTS, TEACHER SUPPORT, NOTES COMPILATION,
+  ASSESSED STUDENT WORK, MYP/PYP, LitCharts, LitLearn, Lewwinski BM,
+  Mortar & Pestle, PaperPlainz, Bananaomics 2022, IB Biz, IB English Guys,
+  Revision Dojo Archive, Revision Village, RV Other Materials.
+- Next: UC-backed TFM crawler (harvest `cf_clearance`, reuse in `tfm.py`),
+  then dl.* + arrib/dynamic/suffering mirrors with same technique.
+
 ## 17. Recon batch 2026-10-09 (all leads, no connectors yet)
 
 - `papers.xtremepape.rs` done (see CHANGELOG) — best open source so far.
