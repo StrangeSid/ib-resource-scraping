@@ -147,3 +147,13 @@ All 8 `git.pirateib.sh/pirateIB/*` repos clone cleanly over HTTPS with `--depth 
 - **More repo suffixes** (from indexed TFM pages + mirrors): `repo.*`: sh/su/ua/me/sbs/org (one page variant lists …/io). `repo.pirateib.me` dead (000). Reddit r/IBO adds: `ibcalculator.com` (200), `citecount.com/ib-resources`, `marksyib.com` (410 gone).
 - **Revision Dojo Archive tree** (via indexed TFM): root folders `Revision Dojo Archive` (upd 2026-04-06), `Revision Village` + `RV - Other Materials` (upd 2026-08-30); inside: `cheatsheets/`, `exemplars/`, `predictedpapers/` (+ `index.html` 112 B). N25 papers path prefix seen: `dl.pirateib.sh/…/2025 Examination Session/…N25/`.
 - **Backend API v1 built** (`api/main.py`, FastAPI :8471, `{status,data,meta}` envelope): `/health`, `/stats`, `/search` (FTS5 porter, kind=file|remote|link), `/resources/{sha}`, `/download/{sha}`, `/mirrors` (?refresh), `/links`. FTS rows: 684 (4 local + 60 ibdocs remote + 620 links). All 8 endpoints curl-verified 200. Frontend UI + MCP/skill = later.
+
+## 16. RevisionHub (2026-10-09, gated)
+
+- `revisionhub.study`: Next.js App Router + Clerk auth. 6 subjects
+  (Math AA/AI, Bio, Chem, Physics, BM), routes `/ib`, `/ib/questionbank`,
+  `/search`, `/ib/test-builder`. Subject pages SSR only the shell —
+  question data loads client-side; no `/api/*` REST routes found.
+- `/search?q=` and subject pages redirect to `/sign-up` without session.
+  Same class as RevisionDojo PRO: needs a donated/logged-in account before
+  any connector is possible. Logged, not built.
