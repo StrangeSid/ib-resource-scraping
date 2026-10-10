@@ -67,3 +67,43 @@ def crawl(host, root="", session=None, max_pages=500, store=None, dl_limit=0, lo
                 n_f += 1
         log(f"{path or '/'}: {n_d} dirs {n_f} files")
     return recs
+
+
+def crawl_uc(host, root="", max_pages=500, log=print):
+    """Catalog-only BFS inside a real UC browser.
+
+    For hosts that RST curl_cffi (arrib.cc, dynamicrepo.sbs) but serve
+    ?json to the solved browser. Record-only: no byte downloads.
+    """
+    import json as _json
+    from seleniumbase import SB
+    recs = []
+    with SB(uc=True, headless=True) as sb:
+        sb.open(host.rstrip("/") + "/")
+        sb.sleep(20)
+        seen, queue = {root}, [root]
+        while queue and len(seen) <= max_pages:
+            path = queue.pop(0)
+            url = host.rstrip("/") + ("/" + quote(path.strip("/"))
+                                      if path.strip("/") else "/") + "?json"
+            try:
+                sb.open(url)
+                sb.sleep(2)
+                d, _ = _json.JSONDecoder().raw_decode(sb.get_text("body").strip())
+            except Exception as e:
+                log(f"skip {path}: {str(e)[:80]}")
+                continue
+            n_d = 0
+            for p in d.get("paths", []):
+                sub = (path.strip("/") + "/" + p["name"]).strip("/")
+                is_dir = p["path_type"].endswith("Dir")
+                recs.append({"url": host.rstrip("/") + "/" + quote(sub),
+                             "name": p["name"], "size": str(p.get("size", 0)),
+                             "parent": path, "source": "dufs:" + host})
+                if is_dir:
+                    if sub not in seen:
+                        seen.add(sub)
+                        queue.append(sub)
+                    n_d += 1
+            log(f"{path or '/'}: {n_d} dirs")
+    return recs

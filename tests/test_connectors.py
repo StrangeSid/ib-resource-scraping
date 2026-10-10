@@ -372,6 +372,45 @@ def test_dufs_list_and_crawl(tmp_path):
     assert st.db.execute("SELECT COUNT(*) FROM files").fetchone()[0] == 1
 
 
+def test_dufs_crawl_uc_mocked():
+    import sys as _sys
+    pages = {
+        "https://h/?json": {"paths": [
+            {"path_type": "Dir", "name": "Sub", "size": 0},
+            {"path_type": "File", "name": "b.pdf", "size": 7}]},
+        "https://h/Sub?json": {"paths": []},
+    }
+
+    class _SB:
+        def __init__(self, *a, **k):
+            self.opened = []
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def open(self, url):
+            self.opened.append(url)
+
+        def sleep(self, n):
+            pass
+
+        def get_text(self, sel):
+            import json as _j
+            return _j.dumps(pages[self.opened[-1]])
+
+    mod = MagicMock()
+    mod.SB = _SB
+    _sys.modules["seleniumbase"] = mod
+    try:
+        recs = dufs.crawl_uc("https://h", log=lambda *a: None)
+        assert len(recs) == 2 and recs[0]["source"] == "dufs:https://h"
+    finally:
+        del _sys.modules["seleniumbase"]
+
+
 def test_uc_cleared_session_cookie_file(tmp_path):
     jar = tmp_path / "cookies.txt"
     jar.write_text("# Netscape HTTP Cookie File\n"

@@ -3,16 +3,15 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
-## Unreleased
+## v0.3.0 — 2026-10-10
 
-- Scrapling trial: CF 200 but empty DOM — UC+cffi chain stays. Reserved for
-  xhr capture + open-host spiders. FINDINGS §19, sections reordered.
-- UI v1 (`ui/`, ledger design): search + kind radios + stamps, served at `/`.
-  Browser-verified incl. live cross-source query.
-- UI v2: sha in search extras, per-file local download links, prev/next paging.
-  Browser-verified (kind filter, 30 file rows, pager states).
-- MCP stdio verified live + `mcp.example.json` wiring + transport test (41 green).
-  Quirk: single-item lists arrive unwrapped.
+- Scrapling trial: CF 200 but empty DOM — UC+cffi chain stays.
+- UI v1+v2: ledger page, kind radios, stamps, sha extras, download links, paging.
+- MCP stdio verified + `mcp.example.json` + transport test. Unwrap quirk logged.
+- `crawl_uc`: in-browser `?json` BFS for RST hosts (arrib 184 records).
+- sufferingrepo.me via standard chain: 502 records. FTS 59,302. 42 tests green.
+- Rosetta 2 installed (UC Mode requirement on Apple Silicon).
+- Re-sweeps stable: ibdocs 622, ibnotes 623, mirror API down (cache kept).
 
 ## v0.2.0 — 2026-10-09 (production testing release)
 
