@@ -7,6 +7,8 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 
 - Scrapling trial: CF 200 but empty DOM — UC+cffi chain stays. Reserved for
   xhr capture + open-host spiders. FINDINGS §19, sections reordered.
+- UI v1 (`ui/`, ledger design): search + kind radios + stamps, served at `/`.
+  Browser-verified incl. live cross-source query.
 
 ## v0.2.0 — 2026-10-09 (production testing release)
 

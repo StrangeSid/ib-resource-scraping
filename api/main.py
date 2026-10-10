@@ -133,3 +133,9 @@ def links(q: str = "", platform: str = "", limit: int = 20):
     except sqlite3.OperationalError:
         rows = []
     return ok(rows, query=q, platform=platform or "all", count=len(rows))
+
+
+ui_dir = ROOT / "ui"
+if ui_dir.is_dir():
+    from fastapi.staticfiles import StaticFiles
+    app.mount("/", StaticFiles(directory=ui_dir, html=True), name="ui")

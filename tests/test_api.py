@@ -60,6 +60,13 @@ def test_mirrors_and_links(client):
     assert client.get("/links").json()["data"] == []
 
 
+def test_ui_served():
+    from fastapi.testclient import TestClient as TC
+    import api.main as M2
+    r = TC(M2.app).get("/")
+    assert r.status_code == 200 and "<title>IB Index" in r.text
+
+
 def test_recent_and_stats_indexed(client):
     r = client.get("/recent", params={"limit": 5}).json()
     assert r["meta"]["count"] == 1 and r["data"][0]["filename"] == "grade-test"
