@@ -69,7 +69,7 @@ def crawl(host, root="", session=None, max_pages=500, store=None, dl_limit=0, lo
     return recs
 
 
-def crawl_uc(host, root="", max_pages=500, log=print):
+def crawl_uc(host, root="", max_pages=500, log=print, manifest=None):
     """Catalog-only BFS inside a real UC browser.
 
     For hosts that RST curl_cffi (arrib.cc, dynamicrepo.sbs) but serve
@@ -106,4 +106,9 @@ def crawl_uc(host, root="", max_pages=500, log=print):
                         queue.append(sub)
                     n_d += 1
             log(f"{path or '/'}: {n_d} dirs")
+            if manifest and len(seen) % 50 == 0:
+                _json.dump(recs, open(manifest, "w"))
+                log(f"flushed {len(recs)} to {manifest}")
+    if manifest:
+        _json.dump(recs, open(manifest, "w"))
     return recs

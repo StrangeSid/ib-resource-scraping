@@ -3,6 +3,11 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
+## Unreleased
+
+- `crawl_uc` manifest flush (progress survives timeouts).
+- Full arrib.cc sweep: 2561 records. dynamicrepo BOOKS proof: 184. FTS 61,863.
+
 ## v0.3.0 — 2026-10-10
 
 - Scrapling trial: CF 200 but empty DOM — UC+cffi chain stays.

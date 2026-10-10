@@ -411,6 +411,40 @@ def test_dufs_crawl_uc_mocked():
         del _sys.modules["seleniumbase"]
 
 
+def test_dufs_crawl_uc_flush(tmp_path):
+    import sys as _sys
+    import json as _j
+
+    class _SB:
+        def __init__(self, *a, **k):
+            self.opened = []
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def open(self, url):
+            self.opened.append(url)
+
+        def sleep(self, n):
+            pass
+
+        def get_text(self, sel):
+            return '{"paths": []}'
+
+    mod = MagicMock()
+    mod.SB = _SB
+    _sys.modules["seleniumbase"] = mod
+    try:
+        out = tmp_path / "flush.json"
+        recs = dufs.crawl_uc("https://h", manifest=str(out), log=lambda *a: None)
+        assert recs == [] and _j.loads(out.read_text()) == []
+    finally:
+        del _sys.modules["seleniumbase"]
+
+
 def test_uc_cleared_session_cookie_file(tmp_path):
     jar = tmp_path / "cookies.txt"
     jar.write_text("# Netscape HTTP Cookie File\n"
