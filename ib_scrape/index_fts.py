@@ -54,7 +54,7 @@ def build(store_root, manifests_dir):
     db.execute("CREATE VIRTUAL TABLE fts USING fts5(kind, title, url, source,"
                " subject, extra, tokenize='porter')")
     db.execute("INSERT INTO fts(kind,title,url,source,subject,extra)"
-               " SELECT 'file',filename,url,source,subject,rtype FROM files")
+               " SELECT 'file',filename,url,source,subject,sha256 FROM files")
     db.execute("INSERT INTO fts(kind,title,url,source,subject,extra)"
                " SELECT 'remote',name,url,source,year||' '||session,''"
                " FROM remote_files")

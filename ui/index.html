@@ -83,6 +83,14 @@
   .stamp.file { color: var(--green); }
   .stamp.remote { color: var(--blue); }
   .stamp.link { color: var(--amber); }
+  #pager { display: flex; gap: 8px; margin: 16px 0 0; }
+  #pager button {
+    background: #fff;
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    font-weight: 600;
+  }
+  .dl { font-size: 0.9rem; margin-left: 8px; }
   .dl { font-size: 0.9rem; }
   footer { margin-top: 40px; color: var(--faint); font-size: 0.9rem; border-top: 1px solid var(--rule); padding-top: 12px; }
   @media (max-width: 560px) {
@@ -110,6 +118,10 @@
   </div>
   <p id="meta" aria-live="polite">Type two or more characters to search the index.</p>
   <ol id="results"></ol>
+  <p id="pager" style="display:none">
+    <button id="prev" type="button">← Newer</button>
+    <button id="next" type="button">Older →</button>
+  </p>
   <footer id="foot"></footer>
 </div>
 <script>
@@ -142,15 +154,25 @@ async function run(offset = 0) {
     return;
   }
   const rows = res.data;
+  const more = rows.length === 30;
+  $("pager").style.display = rows.length ? "flex" : "none";
+  $("prev").disabled = offset === 0;
+  $("next").disabled = !more;
+  window._off = offset;
   $("meta").textContent = rows.length
     ? `${rows.length} result${rows.length > 1 ? "s" : ""} for “${q}”${offset ? ` (from ${offset + 1})` : ""}`
     : `Nothing filed under “${q}”. Try fewer or different words.`;
   $("results").innerHTML = rows.map((r) => {
     const link = `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>`;
-    return `<li><span class="t">${link}</span><span class="stamp ${esc(r.kind)}">${esc(r.kind)}</span>` +
+    const dl = r.kind === "file" && r.extra
+      ? `<a class="dl" href="/download/${esc(r.extra)}">save a local copy</a>` : "";
+    return `<li><span class="t">${link}${dl}</span><span class="stamp ${esc(r.kind)}">${esc(r.kind)}</span>` +
       `<span class="s">${esc(r.source)}${r.subject ? " · " + esc(r.subject) : ""}</span></li>`;
   }).join("");
 }
+
+$("prev").addEventListener("click", () => run(Math.max(0, (window._off || 0) - 30)));
+$("next").addEventListener("click", () => run((window._off || 0) + 30));
 
 $("f").addEventListener("submit", (e) => { e.preventDefault(); run(0); });
 document.querySelectorAll('input[name="kind"]').forEach((el) =>

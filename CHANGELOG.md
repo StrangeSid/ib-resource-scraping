@@ -9,6 +9,8 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
   xhr capture + open-host spiders. FINDINGS §19, sections reordered.
 - UI v1 (`ui/`, ledger design): search + kind radios + stamps, served at `/`.
   Browser-verified incl. live cross-source query.
+- UI v2: sha in search extras, per-file local download links, prev/next paging.
+  Browser-verified (kind filter, 30 file rows, pager states).
 
 ## v0.2.0 — 2026-10-09 (production testing release)
 

@@ -60,6 +60,15 @@ def test_mirrors_and_links(client):
     assert client.get("/links").json()["data"] == []
 
 
+def test_search_file_carries_sha(client):
+    import sqlite3
+    import api.main as M2
+    sha = sqlite3.connect(M2.STORE / "index.sqlite").execute(
+        "SELECT sha256 FROM files").fetchone()[0]
+    hits = client.get("/search", params={"q": "grade", "kind": "file"}).json()["data"]
+    assert hits and hits[0]["extra"] == sha
+
+
 def test_ui_served():
     from fastapi.testclient import TestClient as TC
     import api.main as M2
