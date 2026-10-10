@@ -3,6 +3,11 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
+## Unreleased
+
+- Scrapling trial: CF 200 but empty DOM — UC+cffi chain stays. Reserved for
+  xhr capture + open-host spiders. FINDINGS §19, sections reordered.
+
 ## v0.2.0 — 2026-10-09 (production testing release)
 
 - UC chain live: harvest → curl_cffi chrome-TLS → crawl. Binding = cookies + UA + TLS.

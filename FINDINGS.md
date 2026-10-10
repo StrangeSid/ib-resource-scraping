@@ -158,6 +158,18 @@ All 8 `git.pirateib.sh/pirateIB/*` repos clone cleanly over HTTPS with `--depth 
   Same class as RevisionDojo PRO: needs a donated/logged-in account before
   any connector is possible. Logged, not built.
 
+
+## 17. Recon batch 2026-10-09 (all leads, no connectors yet)
+
+- `papers.xtremepape.rs` done (see CHANGELOG) — best open source so far.
+- `inkstall.in/ib-past-papers/` = gateway to `inkstall.com` (tuition SPA, 66 KB,
+  not WordPress). Papers behind JS routes — needs browser recon.
+- `questionbank-b8c59.web.app` (IB QB v4): static landing (bootstrap/jquery),
+  app routes unknown (`/questionbank`, `/main.html` 404). Needs route discovery.
+- `ibresources.lol/mirror`: 511 B, empty — dead.
+- `openslum.org`: curl 200 but requests/fetch fail (TLS flaky) — deferred.
+- `edcrate.com`: dead (000).
+
 ## 18. Solver survey + UC breakthrough (2026-10-09)
 
 - Surveyed 4 topics (`cloudflare-bypass` 353 repos, `challenge-solver`,
@@ -180,13 +192,13 @@ All 8 `git.pirateib.sh/pirateIB/*` repos clone cleanly over HTTPS with `--depth 
 - Next: UC-backed TFM crawler (harvest `cf_clearance`, reuse in `tfm.py`),
   then dl.* + arrib/dynamic/suffering mirrors with same technique.
 
-## 17. Recon batch 2026-10-09 (all leads, no connectors yet)
 
-- `papers.xtremepape.rs` done (see CHANGELOG) — best open source so far.
-- `inkstall.in/ib-past-papers/` = gateway to `inkstall.com` (tuition SPA, 66 KB,
-  not WordPress). Papers behind JS routes — needs browser recon.
-- `questionbank-b8c59.web.app` (IB QB v4): static landing (bootstrap/jquery),
-  app routes unknown (`/questionbank`, `/main.html` 404). Needs route discovery.
-- `ibresources.lol/mirror`: 511 B, empty — dead.
-- `openslum.org`: curl 200 but requests/fetch fail (TLS flaky) — deferred.
-- `edcrate.com`: dead (000).
+## 19. Scrapling trial (2026-10-10)
+
+- Scrapling 86.6k★ (BSD-3): StealthyFetcher (`solve_cloudflare`), chrome-TLS
+  Fetcher, `capture_xhr`, spiders (pause/resume, autothrottle), MCP, skill, CLI.
+- Trial vs repo.pirateib.sh: default 403; `solve_cloudflare=True` → 200 but
+  EMPTY DOM (no title, TFM rows absent). CF passed, content failed.
+- Verdict: keep UC+cffi chain for CF hosts. Scrapling reserved for:
+  Fetcher impersonation alt, `capture_xhr` API discovery (revisionhub/inkstall),
+  spiders for open-host bulk crawls. Trial-only dep, not in requirements.
