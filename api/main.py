@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 STORE = Path(os.environ.get("STORE", ROOT / "store"))
 MDIR = Path(os.environ.get("MANIFESTS", ROOT / "manifests"))
 
-app = FastAPI(title="ib-resources", version="0.3.0")
+app = FastAPI(title="ib-resources", version="0.4.0")
 
 
 def db():
