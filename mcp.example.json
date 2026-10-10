@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "ib-resources": {
+      "command": "/path/to/ib-resource-scraping/.venv/bin/python",
+      "args": ["mcp_server.py"],
+      "cwd": "/path/to/ib-resource-scraping",
+      "env": {
+        "STORE": "/path/to/ib-resource-scraping/store",
+        "MANIFESTS": "/path/to/ib-resource-scraping/manifests"
+      }
+    }
+  }
+}

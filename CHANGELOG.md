@@ -11,6 +11,8 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
   Browser-verified incl. live cross-source query.
 - UI v2: sha in search extras, per-file local download links, prev/next paging.
   Browser-verified (kind filter, 30 file rows, pager states).
+- MCP stdio verified live + `mcp.example.json` wiring + transport test (41 green).
+  Quirk: single-item lists arrive unwrapped.
 
 ## v0.2.0 — 2026-10-09 (production testing release)
 

@@ -32,6 +32,8 @@ All responses: `{status, data, meta}`. Kinds: `file` (local bytes),
 Cloudflare chain: UC harvest → curl_cffi chrome-TLS → crawl.
 Trial-only deps (`seleniumbase`, `curl_cffi`) live in `.venv`, NOT requirements.
 MCP alternative: `./.venv/bin/python mcp_server.py` (stdio; tools mirror the API).
+Wire it with `mcp.example.json` (copy + fix paths). Note: single search hits
+arrive unwrapped (object, not one-item array).
 
 ## Policies (hard)
 

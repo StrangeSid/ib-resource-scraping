@@ -42,8 +42,11 @@ Envelope `{status, data, meta}` on every route.
 
 ## 4. MCP server (`mcp_server.py`)
 
-Stdio. Tools `search`, `resource`, `stats`, `mirrors`, `links` over same
-index. `STORE`/`MANIFESTS` env overrides. Pinned `mcp<2` (v2 drops FastMCP).
+Stdio, verified live (handshake + tools/list + search call over real transport).
+Tools `search`, `resource`, `stats`, `mirrors`, `links` over same index.
+`STORE`/`MANIFESTS` env overrides. Pinned `mcp<2` (v2 drops FastMCP).
+Wire via `mcp.example.json` (copy, fix paths). Quirk: FastMCP unwraps
+single-item lists — clients must accept object-or-array.
 
 ## 5. Cloudflare chain (repo.*/dl.*/mirrors)
 
