@@ -85,13 +85,38 @@ Every response: `{status, data, meta}`.
 
 ## Deploy
 
+**Cloud (search + direct downloads, e.g. `ib-scrape.sidevv.xyz`):**
+API runs in cloud catalog mode — read-only search over committed
+`manifests/`, downloads 307-redirect to source hosts. No disk, no keys.
+
+```sh
+# from repo root (FastAPI preset auto-detects api/index.py)
+vercel --prod
+# dashboard: Settings → Domains → add ib-scrape.sidevv.xyz
+# DNS: CNAME ib-scrape -> cname.vercel-dns.com
+```
+
+Same domain serves UI (`/`) + API (`/search`, `/stats`, …).
+`CLOUD_MODE=1` forces cloud; `CLOUD_MODE=0` forces local.
+`GET /mirrors?refresh=true` is 403 in cloud (self-host for live polling).
+
+**Self-host (your own searchable downloads):** clone, gather bytes, serve.
+
+```sh
+git clone https://github.com/StrangeSid/ib-resource-scraping && cd ib-resource-scraping
+python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt
+./.venv/bin/python scripts/gather.py --only mirrors,ibnotes --store store
+./.venv/bin/python scripts/gather.py --only wp --search "grade boundaries" --limit 10
+CLOUD_MODE=0 ./.venv/bin/python -m uvicorn api.main:app --port 8471
+# UI: open http://localhost:8471/ , or point the cloud UI at it once with ?api=http://localhost:8471
+```
+
+Docker / k8s / Cloud Run (local-mode images, persistent disk):
+
 ```sh
 docker build -t ib-resources . && docker compose up -d   # :8471
 kubectl apply -f k8s/app.yaml                             # cluster
 PROJECT=myproj ./scripts/deploy_gcloud.sh                 # Cloud Run
 ```
-
-Static UI anywhere (Vercel: `ui/` as root): point it at an API with
-`?api=https://your-api` once (saved to localStorage).
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md). License: GPLv3 — see [`LICENSE`](LICENSE).

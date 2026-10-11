@@ -1,7 +1,13 @@
-"""Local IB resource API. Structured JSON. Read-only v1.
+"""IB resource API. Two modes, same envelope {status, data, meta}.
 
+- LOCAL (self-host): sqlite FTS + blobs on disk. Clone the repo, run
+  gather.py, serve with STORE=./store. Full bytes via /download/{sha}.
+- CLOUD (Vercel): read-only catalog over committed manifests/*.json.
+  No sqlite, no blobs. /download/{sha} 307-redirects to the source URL.
+  Frontend links remote rows straight to their source for direct download.
+
+Mode: CLOUD_MODE=1/0, or auto (cloud when index.sqlite is absent, e.g. Vercel).
 Run: uvicorn api.main:app --port 8471  (from repo root, STORE env optional)
-Future: frontend UI, MCP/skill wrapper (see FINDINGS.md).
 """
 import json
 import os
@@ -9,20 +15,32 @@ import sqlite3
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 ROOT = Path(__file__).resolve().parent.parent
 STORE = Path(os.environ.get("STORE", ROOT / "store"))
 MDIR = Path(os.environ.get("MANIFESTS", ROOT / "manifests"))
 
-app = FastAPI(title="ib-resources", version="0.5.0")
+CLOUD_ENV = os.environ.get("CLOUD_MODE", "").strip().lower()
+
+
+def use_cloud() -> bool:
+    if CLOUD_ENV in ("1", "true", "yes", "cloud"):
+        return True
+    if CLOUD_ENV in ("0", "false", "no", "local"):
+        return False
+    # auto: serverless / fresh cloud checkout has manifests but no sqlite
+    return not (STORE / "index.sqlite").exists()
+
+
+app = FastAPI(title="ib-resources", version="0.6.0")
 
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
-    allow_methods=["GET"],
+    allow_methods=["GET", "HEAD", "OPTIONS"],
     max_age=86400,
 )
 
@@ -39,11 +57,17 @@ def ok(data, **meta):
 
 @app.get("/health")
 def health():
-    return ok({"store": str(STORE), "indexed": (STORE / "index.sqlite").exists()})
+    if use_cloud():
+        return ok({"store": "cloud", "indexed": True, "mode": "cloud"})
+    return ok({"store": str(STORE), "indexed": (STORE / "index.sqlite").exists(),
+               "mode": "local"})
 
 
 @app.get("/stats")
 def stats():
+    if use_cloud():
+        from api import cloud as _cloud
+        return ok(_cloud.stats())
     con = db()
     try:
         files = con.execute("SELECT COUNT(*), COALESCE(SUM(size),0) FROM files").fetchone()
@@ -60,6 +84,10 @@ def stats():
 
 @app.get("/recent")
 def recent(limit: int = 20):
+    if use_cloud():
+        from api import cloud as _cloud
+        rows = _cloud.recent(limit)
+        return ok(rows, limit=limit, count=len(rows))
     con = db()
     try:
         rows = [dict(r) for r in con.execute(
@@ -76,6 +104,13 @@ def search(q: str = Query(..., min_length=2),
            sort: str = Query("rank", pattern="^(rank|recent)$"),
            rtype: str = "", level: str = "", session: str = "", year: str = "",
            limit: int = 20, offset: int = 0):
+    if use_cloud():
+        from api import cloud as _cloud
+        rows = _cloud.search(q, kind, rtype, level, session, year,
+                             sort, limit, offset)
+        return ok(rows, query=q, kind=kind or "all", sort=sort,
+                  limit=limit, offset=offset, count=len(rows),
+                  mode="cloud")
     from ib_scrape.index_fts import prefix_query
     con = db()
     order = "rank" if sort == "rank" else "ts DESC, rank"
@@ -99,6 +134,10 @@ def search(q: str = Query(..., min_length=2),
 @app.get("/facets")
 def facets(q: str = Query("", max_length=200),
            kind: str = Query("", pattern="^(file|remote|link|)$")):
+    if use_cloud():
+        from api import cloud as _cloud
+        return ok(_cloud.facets(q, kind), query=q, kind=kind or "all",
+                  mode="cloud")
     from ib_scrape.index_fts import prefix_query
     con = db()
     base, args = "1=1", []
@@ -120,6 +159,12 @@ def facets(q: str = Query("", max_length=200),
 
 @app.get("/resources/{sha}")
 def resource(sha: str):
+    if use_cloud():
+        from api import cloud as _cloud
+        d = _cloud.resource(sha)
+        if not d:
+            raise HTTPException(404, "unknown sha256")
+        return ok(d)
     con = db()
     r = con.execute("SELECT * FROM files WHERE sha256=?", (sha,)).fetchone()
     if not r:
@@ -131,6 +176,13 @@ def resource(sha: str):
 
 @app.get("/download/{sha}")
 def download(sha: str):
+    if use_cloud():
+        from api import cloud as _cloud
+        url = _cloud.download_url(sha)
+        if not url:
+            raise HTTPException(404, "unknown sha256")
+        # Cloud has no blobs: send the browser straight to the source file.
+        return RedirectResponse(url, status_code=307)
     con = db()
     r = con.execute("SELECT * FROM files WHERE sha256=?", (sha,)).fetchone()
     if not r:
@@ -149,6 +201,11 @@ def blob_path(sha):
 
 @app.get("/mirrors")
 def mirrors(refresh: bool = False):
+    if use_cloud():
+        from api import cloud as _cloud
+        if refresh:
+            raise HTTPException(403, "refresh disabled in cloud; self-host for live polling")
+        return ok(_cloud.mirrors(), refreshed=False)
     f = MDIR / "mirrors.json"
     if refresh:
         from ib_scrape.connectors import mirror_api
@@ -163,6 +220,11 @@ def mirrors(refresh: bool = False):
 
 @app.get("/links")
 def links(q: str = "", platform: str = "", limit: int = 20):
+    if use_cloud():
+        from api import cloud as _cloud
+        rows = _cloud.links(q, platform, limit)
+        return ok(rows, query=q, platform=platform or "all", count=len(rows),
+                  mode="cloud")
     con = db()
     try:
         rows = [dict(r) for r in con.execute(

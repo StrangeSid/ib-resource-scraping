@@ -106,6 +106,7 @@
 <div class="wrap">
   <h1>IB Index</h1>
   <p class="sub" id="statsline">Past papers, markschemes, grade boundaries and question banks, gathered into one searchable shelf.</p>
+  <p class="sub" id="modeline" style="font-size:0.9rem"></p>
   <form id="f" role="search">
     <input id="q" type="search" name="q" placeholder="e.g. physics paper 2 TZ1 markscheme" aria-label="Search the index" autocomplete="off">
     <button type="submit">Search</button>
@@ -150,7 +151,16 @@ async function stats() {
     const r = await (await fetch(`${API}/stats`)).json();
     const d = r.data;
     $("statsline").innerHTML = `Past papers, markschemes, grade boundaries and question banks — <b>${d.indexed.toLocaleString()}</b> records on one searchable shelf.`;
-    $("foot").textContent = `${d.files} files stored locally · ${d.remote_catalog} cataloged elsewhere · ${d.links} curated links.`;
+    const mode = r.meta && r.meta.mode;
+    try {
+      const h = await (await fetch(`${API}/health`)).json();
+      const m = (h.data && h.data.mode) || mode || "cloud";
+      $("modeline").textContent = m === "cloud"
+        ? "Cloud catalog: opening a result downloads it straight from its source host. Want your own searchable downloads? Clone the repo and self-host."
+        : "Local instance: matched files download from your own disk.";
+    } catch { /* health optional */ }
+    $("foot").innerHTML = `${d.files} files cataloged · ${d.remote_catalog} cataloged elsewhere · ${d.links} curated links. ` +
+      `Source hosts serve the bytes; <a href="https://github.com/StrangeSid/ib-resource-scraping">clone the repo</a> to self-host searchable downloads.`;
   } catch { /* offline stats stay static */ }
 }
 
@@ -187,7 +197,10 @@ async function run(offset = 0) {
   $("results").innerHTML = rows.map((r) => {
     const link = `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>`;
     const dl = r.kind === "file" && r.extra
-      ? `<a class="dl" href="${API}/download/${esc(r.extra)}">save a local copy</a>` : "";
+      ? `<a class="dl" href="${API}/download/${esc(r.extra)}">download</a>`
+      : r.kind === "remote"
+      ? `<a class="dl" href="${esc(r.url)}" target="_blank" rel="noopener">open / download</a>`
+      : "";
     const when = r.ts ? ` · ${esc(r.ts.slice(0, 7))}` : "";
     return `<li><span class="t">${link}${dl}</span><span class="stamp ${esc(r.kind)}">${esc(r.kind)}</span>` +
       `<span class="s">${r.rtype && r.rtype !== "other" ? esc(r.rtype) + " · " : ""}${esc(r.source)}${r.subject ? " · " + esc(r.subject.split(" ").slice(0, 4).join(" ")) : ""}${when}</span></li>`;
