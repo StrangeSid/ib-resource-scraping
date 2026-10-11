@@ -15,7 +15,16 @@ ROOT = Path(__file__).resolve().parent.parent
 STORE = Path(os.environ.get("STORE", ROOT / "store"))
 MDIR = Path(os.environ.get("MANIFESTS", ROOT / "manifests"))
 
-app = FastAPI(title="ib-resources", version="0.4.0")
+app = FastAPI(title="ib-resources", version="0.5.0")
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_methods=["GET"],
+    max_age=86400,
+)
 
 
 def db():

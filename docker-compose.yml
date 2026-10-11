@@ -1,0 +1,13 @@
+services:
+  api:
+    build: .
+    image: ib-resources:local
+    ports:
+      - "8471:8471"
+    volumes:
+      - ./store:/data/store
+      - ./manifests:/data/manifests:ro
+    environment:
+      STORE: /data/store
+      MANIFESTS: /data/manifests
+    restart: unless-stopped

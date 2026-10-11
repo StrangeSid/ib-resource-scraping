@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ib-resources
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ib-resources
+  template:
+    metadata:
+      labels:
+        app: ib-resources
+    spec:
+      containers:
+        - name: api
+          image: ib-resources:latest
+          ports:
+            - containerPort: 8471
+          env:
+            - name: STORE
+              value: /data/store
+            - name: MANIFESTS
+              value: /data/manifests
+          volumeMounts:
+            - name: data
+              mountPath: /data/store
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 250m
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ib-resources-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ib-resources
+spec:
+  selector:
+    app: ib-resources
+  ports:
+    - port: 80
+      targetPort: 8471
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ib-resources-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi

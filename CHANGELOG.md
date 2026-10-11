@@ -3,11 +3,13 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
-## Unreleased
+## v0.5.0 — 2026-10-10
 
 - Classification: `classify.py` (rtype/level/session/year/tz) indexed for all
-  61,863 rows. `/search` filters (rtype/level/session/year) + `/facets`.
-  UI filter dropdowns + rtype labels. 49 tests.
+  rows. `/search` filters + `/facets`. UI filter dropdowns + rtype labels.
+- Deploy pack: Dockerfile (validated build + smoke run), compose, k8s
+  manifests, Vercel static UI config, Cloud Run script. CORS for split deploy.
+- UI `?api=` override (localStorage persisted). 49 tests.
 
 ## v0.4.0 — 2026-10-10
 

@@ -80,7 +80,18 @@ Every response: `{status, data, meta}`.
 
 ```sh
 ./.venv/bin/pip install -r requirements-dev.txt
-./.venv/bin/python -m pytest tests/ -q   # 38 green, no live network
+./.venv/bin/python -m pytest tests/ -q   # 49 green, no live network
 ```
+
+## Deploy
+
+```sh
+docker build -t ib-resources . && docker compose up -d   # :8471
+kubectl apply -f k8s/app.yaml                             # cluster
+PROJECT=myproj ./scripts/deploy_gcloud.sh                 # Cloud Run
+```
+
+Static UI anywhere (Vercel: `ui/` as root): point it at an API with
+`?api=https://your-api` once (saved to localStorage).
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md). License: GPLv3 — see [`LICENSE`](LICENSE).
