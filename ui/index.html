@@ -115,6 +115,12 @@
     <label><input type="radio" name="kind" value="file">Downloaded</label>
     <label><input type="radio" name="kind" value="remote">Catalog only</label>
     <label><input type="radio" name="kind" value="link">Link graph</label>
+    <label>Sort
+      <select id="sort" aria-label="Sort order">
+        <option value="rank">Most relevant</option>
+        <option value="recent">Newest first</option>
+      </select>
+    </label>
   </div>
   <p id="meta" aria-live="polite">Type two or more characters to search the index.</p>
   <ol id="results"></ol>
@@ -145,7 +151,8 @@ async function run(offset = 0) {
     return;
   }
   const kind = document.querySelector('input[name="kind"]:checked').value;
-  const url = `/search?q=${encodeURIComponent(q)}&limit=30&offset=${offset}` + (kind ? `&kind=${kind}` : "");
+  const sort = $("sort").value;
+  const url = `/search?q=${encodeURIComponent(q)}&limit=30&offset=${offset}&sort=${sort}` + (kind ? `&kind=${kind}` : "");
   let res;
   try {
     res = await (await fetch(url)).json();
@@ -166,8 +173,9 @@ async function run(offset = 0) {
     const link = `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>`;
     const dl = r.kind === "file" && r.extra
       ? `<a class="dl" href="/download/${esc(r.extra)}">save a local copy</a>` : "";
+    const when = r.ts ? ` · ${esc(r.ts.slice(0, 7))}` : "";
     return `<li><span class="t">${link}${dl}</span><span class="stamp ${esc(r.kind)}">${esc(r.kind)}</span>` +
-      `<span class="s">${esc(r.source)}${r.subject ? " · " + esc(r.subject) : ""}</span></li>`;
+      `<span class="s">${esc(r.source)}${r.subject ? " · " + esc(r.subject.split(" ").slice(0, 4).join(" ")) : ""}${when}</span></li>`;
   }).join("");
 }
 
@@ -177,6 +185,7 @@ $("next").addEventListener("click", () => run((window._off || 0) + 30));
 $("f").addEventListener("submit", (e) => { e.preventDefault(); run(0); });
 document.querySelectorAll('input[name="kind"]').forEach((el) =>
   el.addEventListener("change", () => run(0)));
+$("sort").addEventListener("change", () => run(0));
 let t;
 $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => run(0), 350); });
 stats();

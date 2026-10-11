@@ -69,6 +69,17 @@ def test_search_file_carries_sha(client):
     assert hits and hits[0]["extra"] == sha
 
 
+def test_search_prefix_and_sort(client):
+    from ib_scrape.index_fts import prefix_query
+    assert prefix_query("May 2026 Histor") == "May* 2026* Histor*"
+    hits = client.get("/search", params={"q": "grad"}).json()["data"]
+    assert hits and hits[0]["title"] == "grade-test"
+    r = client.get("/search", params={"q": "grade", "sort": "recent"}).json()
+    assert r["meta"]["sort"] == "recent" and r["meta"]["count"] >= 1
+    bad = client.get("/search", params={"q": "grade", "sort": "nope"})
+    assert bad.status_code == 422
+
+
 def test_ui_served():
     from fastapi.testclient import TestClient as TC
     import api.main as M2

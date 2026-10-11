@@ -26,6 +26,7 @@ def catalog_item(item):
             "size": str(item.get("filesize") or item.get("media_details", {})
                         .get("filesize", "")),
             "year": (item.get("date") or "")[:4],
+            "ts": (item.get("date") or "")[:10],
             "session": "", "parent": "", "source": "brilliantlearning",
             "mime": item.get("mime_type", "")}
 

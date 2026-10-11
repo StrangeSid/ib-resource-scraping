@@ -3,6 +3,12 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
+## Unreleased
+
+- Search upgrade: prefix matching ("Histor"→"History"), parent-path + URL
+  metadata indexed, derived dates (mtime/year/URL), `sort=recent`, UI sort
+  toggle + date chips. 44 tests.
+
 ## v0.4.0 — 2026-10-10
 
 - `crawl_uc` manifest flush (progress survives timeouts).

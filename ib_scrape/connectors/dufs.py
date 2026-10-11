@@ -26,8 +26,12 @@ def list_json(host, path, session):
     d = r.json()
     out = []
     for p in d.get("paths", []):
+        ts = ""
+        if p.get("mtime"):
+            import time as _t
+            ts = _t.strftime("%Y-%m-%d", _t.gmtime(p["mtime"] / 1000))
         out.append({"name": p["name"], "is_dir": p["path_type"].endswith("Dir"),
-                    "size": p.get("size", 0),
+                    "size": p.get("size", 0), "ts": ts,
                     "url": urljoin(host.rstrip("/") + "/",
                                    quote((path.strip("/") + "/" + p["name"]).strip("/")))})
     return out
@@ -49,6 +53,7 @@ def crawl(host, root="", session=None, max_pages=500, store=None, dl_limit=0, lo
             sub = (path.strip("/") + "/" + row["name"]).strip("/")
             recs.append({"url": row["url"], "name": row["name"],
                          "size": str(row["size"]), "parent": path,
+                         "ts": row.get("ts", ""),
                          "source": "dufs:" + host})
             if row["is_dir"]:
                 if sub not in seen:
@@ -76,6 +81,7 @@ def crawl_uc(host, root="", max_pages=500, log=print, manifest=None):
     ?json to the solved browser. Record-only: no byte downloads.
     """
     import json as _json
+    import time as _time
     from seleniumbase import SB
     recs = []
     with SB(uc=True, headless=True) as sb:
@@ -97,9 +103,12 @@ def crawl_uc(host, root="", max_pages=500, log=print, manifest=None):
             for p in d.get("paths", []):
                 sub = (path.strip("/") + "/" + p["name"]).strip("/")
                 is_dir = p["path_type"].endswith("Dir")
+                ts = ""
+                if p.get("mtime"):
+                    ts = _time.strftime("%Y-%m-%d", _time.gmtime(p["mtime"] / 1000))
                 recs.append({"url": host.rstrip("/") + "/" + quote(sub),
                              "name": p["name"], "size": str(p.get("size", 0)),
-                             "parent": path, "source": "dufs:" + host})
+                             "parent": path, "ts": ts, "source": "dufs:" + host})
                 if is_dir:
                     if sub not in seen:
                         seen.add(sub)

@@ -64,19 +64,22 @@ def recent(limit: int = 20):
 @app.get("/search")
 def search(q: str = Query(..., min_length=2),
            kind: str = Query("", pattern="^(file|remote|link|)$"),
+           sort: str = Query("rank", pattern="^(rank|recent)$"),
            limit: int = 20, offset: int = 0):
+    from ib_scrape.index_fts import prefix_query
     con = db()
-    sql = ("SELECT kind,title,url,source,subject,extra,"
+    order = "rank" if sort == "rank" else "ts DESC, rank"
+    sql = ("SELECT kind,title,url,source,subject,extra,ts,"
            " rank FROM fts WHERE fts MATCH ?"
            + (" AND kind=? " if kind else "")
-           + " ORDER BY rank LIMIT ? OFFSET ?")
-    args = [q] + ([kind] if kind else []) + [limit, offset]
+           + f" ORDER BY {order} LIMIT ? OFFSET ?")
+    args = [prefix_query(q)] + ([kind] if kind else []) + [limit, offset]
     try:
         rows = [dict(r) for r in con.execute(sql, args)]
     except sqlite3.OperationalError:
         rows = []
-    return ok(rows, query=q, kind=kind or "all", limit=limit, offset=offset,
-              count=len(rows))
+    return ok(rows, query=q, kind=kind or "all", sort=sort,
+              limit=limit, offset=offset, count=len(rows))
 
 
 @app.get("/resources/{sha}")
