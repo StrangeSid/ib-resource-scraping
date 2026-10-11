@@ -90,7 +90,7 @@ API runs in cloud catalog mode — read-only search over committed
 `manifests/`, downloads 307-redirect to source hosts. No disk, no keys.
 
 ```sh
-# from repo root (FastAPI preset auto-detects api/index.py)
+# from repo root (FastAPI preset serves main:app as one function)
 vercel --prod
 # dashboard: Settings → Domains → add ib-scrape.sidevv.xyz
 # DNS: CNAME ib-scrape -> cname.vercel-dns.com
@@ -99,6 +99,9 @@ vercel --prod
 Same domain serves UI (`/`) + API (`/search`, `/stats`, …).
 `CLOUD_MODE=1` forces cloud; `CLOUD_MODE=0` forces local.
 `GET /mirrors?refresh=true` is 403 in cloud (self-host for live polling).
+Project needs Framework Preset = FastAPI (set once; keeps `/` + `/search`
+on one function instead of per-file `/api/*` routes). `store/` is excluded
+from uploads via `.vercelignore`, which is what flips auto-detect to cloud.
 
 **Self-host (your own searchable downloads):** clone, gather bytes, serve.
 

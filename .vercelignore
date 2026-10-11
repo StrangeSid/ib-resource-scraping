@@ -1,0 +1,11 @@
+# Vercel upload blocklist: keep the serverless function lean.
+# manifests/ MUST ship (cloud catalog reads it at runtime).
+store/
+.venv/
+.pytest_cache/
+tests/
+scripts/
+k8s/
+coverage/
+*.pyc
+__pycache__/
