@@ -80,6 +80,28 @@ def test_search_prefix_and_sort(client):
     assert bad.status_code == 422
 
 
+def test_search_filters_and_facets(client):
+    import sqlite3
+    import api.main as M2
+    db = sqlite3.connect(M2.STORE / "index.sqlite")
+    db.execute("INSERT INTO remote_files VALUES (?,?,?,?,?,?,?,?,?)",
+               ("http://x/hl-ms", "t", "History HL markscheme", "", "2025",
+                "may-2025", "", "2026-01-01", ""))
+    db.commit()
+    from ib_scrape import index_fts
+    index_fts.build(M2.STORE, M2.MDIR)
+    hits = client.get("/search", params={"q": "history", "rtype": "markscheme"}).json()["data"]
+    assert hits and all(h["rtype"] == "markscheme" for h in hits)
+    hits = client.get("/search", params={"q": "history", "level": "HL"}).json()["data"]
+    assert hits and all(h["level"] == "HL" for h in hits)
+    hits = client.get("/search", params={"q": "history", "rtype": "paper"}).json()["data"]
+    assert hits == []
+    f = client.get("/facets", params={"q": "history"}).json()["data"]
+    assert any(o["value"] == "markscheme" for o in f["rtype"])
+    fall = client.get("/facets").json()["data"]
+    assert "yr" in fall and "level" in fall
+
+
 def test_ui_served():
     from fastapi.testclient import TestClient as TC
     import api.main as M2

@@ -65,21 +65,48 @@ def recent(limit: int = 20):
 def search(q: str = Query(..., min_length=2),
            kind: str = Query("", pattern="^(file|remote|link|)$"),
            sort: str = Query("rank", pattern="^(rank|recent)$"),
+           rtype: str = "", level: str = "", session: str = "", year: str = "",
            limit: int = 20, offset: int = 0):
     from ib_scrape.index_fts import prefix_query
     con = db()
     order = "rank" if sort == "rank" else "ts DESC, rank"
-    sql = ("SELECT kind,title,url,source,subject,extra,ts,"
-           " rank FROM fts WHERE fts MATCH ?"
-           + (" AND kind=? " if kind else "")
+    cond, args = ["fts MATCH ?"], [prefix_query(q)]
+    for col, val in (("kind", kind), ("rtype", rtype), ("level", level),
+                     ("sess", session), ("yr", year)):
+        if val:
+            cond.append(f"{col}=?")
+            args.append(val)
+    sql = ("SELECT kind,title,url,source,subject,extra,ts,rtype,level,sess,yr,tz,"
+           " rank FROM fts WHERE " + " AND ".join(cond)
            + f" ORDER BY {order} LIMIT ? OFFSET ?")
-    args = [prefix_query(q)] + ([kind] if kind else []) + [limit, offset]
     try:
-        rows = [dict(r) for r in con.execute(sql, args)]
+        rows = [dict(r) for r in con.execute(sql, args + [limit, offset])]
     except sqlite3.OperationalError:
         rows = []
     return ok(rows, query=q, kind=kind or "all", sort=sort,
               limit=limit, offset=offset, count=len(rows))
+
+
+@app.get("/facets")
+def facets(q: str = Query("", max_length=200),
+           kind: str = Query("", pattern="^(file|remote|link|)$")):
+    from ib_scrape.index_fts import prefix_query
+    con = db()
+    base, args = "1=1", []
+    if q.strip():
+        base, args = "fts MATCH ?", [prefix_query(q)]
+    if kind:
+        base += " AND kind=?"
+        args.append(kind)
+    out = {}
+    try:
+        for col in ("rtype", "level", "sess", "yr", "tz", "kind"):
+            out[col] = [{"value": v or "—", "count": n} for v, n in con.execute(
+                f"SELECT {col},COUNT(*) FROM fts WHERE {base} AND {col}!=''"
+                f" GROUP BY {col} ORDER BY 2 DESC LIMIT 25", args)]
+    except sqlite3.OperationalError:
+        pass
+    return ok(out, query=q, kind=kind or "all")
 
 
 @app.get("/resources/{sha}")

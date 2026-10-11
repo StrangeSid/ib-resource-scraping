@@ -122,6 +122,11 @@
       </select>
     </label>
   </div>
+  <div class="kinds" id="filters" style="display:none" aria-label="Filters">
+    <label>Type <select id="f_rtype" aria-label="Resource type"></select></label>
+    <label>Level <select id="f_level" aria-label="Level"></select></label>
+    <label>Session <select id="f_sess" aria-label="Session"></select></label>
+  </div>
   <p id="meta" aria-live="polite">Type two or more characters to search the index.</p>
   <ol id="results"></ol>
   <p id="pager" style="display:none">
@@ -152,7 +157,11 @@ async function run(offset = 0) {
   }
   const kind = document.querySelector('input[name="kind"]:checked').value;
   const sort = $("sort").value;
-  const url = `/search?q=${encodeURIComponent(q)}&limit=30&offset=${offset}&sort=${sort}` + (kind ? `&kind=${kind}` : "");
+  const f = (id) => $(id).value;
+  let url = `/search?q=${encodeURIComponent(q)}&limit=30&offset=${offset}&sort=${sort}` + (kind ? `&kind=${kind}` : "");
+  for (const [id, p] of [["f_rtype", "rtype"], ["f_level", "level"], ["f_sess", "session"]]) {
+    if (f(id)) url += `&${p}=${encodeURIComponent(f(id))}`;
+  }
   let res;
   try {
     res = await (await fetch(url)).json();
@@ -175,8 +184,9 @@ async function run(offset = 0) {
       ? `<a class="dl" href="/download/${esc(r.extra)}">save a local copy</a>` : "";
     const when = r.ts ? ` · ${esc(r.ts.slice(0, 7))}` : "";
     return `<li><span class="t">${link}${dl}</span><span class="stamp ${esc(r.kind)}">${esc(r.kind)}</span>` +
-      `<span class="s">${esc(r.source)}${r.subject ? " · " + esc(r.subject.split(" ").slice(0, 4).join(" ")) : ""}${when}</span></li>`;
+      `<span class="s">${r.rtype && r.rtype !== "other" ? esc(r.rtype) + " · " : ""}${esc(r.source)}${r.subject ? " · " + esc(r.subject.split(" ").slice(0, 4).join(" ")) : ""}${when}</span></li>`;
   }).join("");
+  facets();
 }
 
 $("prev").addEventListener("click", () => run(Math.max(0, (window._off || 0) - 30)));
@@ -186,6 +196,30 @@ $("f").addEventListener("submit", (e) => { e.preventDefault(); run(0); });
 document.querySelectorAll('input[name="kind"]').forEach((el) =>
   el.addEventListener("change", () => run(0)));
 $("sort").addEventListener("change", () => run(0));
+for (const id of ["f_rtype", "f_level", "f_sess"]) {
+  $(id).addEventListener("change", () => run(0));
+}
+
+async function facets() {
+  const q = $("q").value.trim();
+  const kind = document.querySelector('input[name="kind"]:checked').value;
+  let url = "/facets?" + (q.length >= 2 ? `q=${encodeURIComponent(q)}&` : "") + (kind ? `kind=${kind}` : "");
+  let d;
+  try {
+    d = (await (await fetch(url)).json()).data;
+  } catch { return; }
+  const map = [["f_rtype", "rtype"], ["f_level", "level"], ["f_sess", "sess"]];
+  let any = false;
+  for (const [id, key] of map) {
+    const cur = $(id).value;
+    const opts = (d[key] || []).slice(0, 12);
+    $(id).innerHTML = `<option value="">All</option>` + opts.map((o) =>
+      `<option value="${esc(o.value)}">${esc(o.value)} (${o.count})</option>`).join("");
+    if ([...$(id).options].some((o) => o.value === cur)) $(id).value = cur;
+    if (opts.length) any = true;
+  }
+  $("filters").style.display = any ? "flex" : "none";
+}
 let t;
 $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => run(0), 350); });
 stats();

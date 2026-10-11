@@ -5,6 +5,8 @@ import sqlite3
 import time
 from pathlib import Path
 
+from .classify import classify
+
 YEAR_RE = re.compile(r"(19|20)\d{2}")
 SESSION_MONTH = {"may": "05", "november": "11", "may-2025": "05"}
 
@@ -74,21 +76,31 @@ def build(store_root, manifests_dir):
              for r in json.loads(cat.read_text())])
     db.execute("DROP TABLE IF EXISTS fts")
     db.execute("CREATE VIRTUAL TABLE fts USING fts5(kind, title, url, source,"
-               " subject, extra, ts, tokenize='porter')")
-    db.execute("INSERT INTO fts(kind,title,url,source,subject,extra,ts)"
-               " SELECT 'file',filename,url,source,subject,sha256,fetched_at"
-               " FROM files")
-    for sha, url, fetched in db.execute(
-            "SELECT sha256,url,fetched_at FROM files").fetchall():
-        ts = ts_of(url)
-        if ts:
-            db.execute("UPDATE fts SET ts=? WHERE kind='file' AND extra=?",
-                       (ts, sha))
-    db.execute("INSERT INTO fts(kind,title,url,source,subject,extra,ts)"
-               " SELECT 'remote',name,url,source,year||' '||session||' '||parent,"
-               " '',ts FROM remote_files")
-    db.execute("INSERT INTO fts(kind,title,url,source,subject,extra,ts)"
-               " SELECT 'link',url,url,platform,host,'','' FROM links")
+               " subject, extra, ts, rtype, level, sess, yr, tz,"
+               " tokenize='porter')")
+
+    def cls(title, url, subject):
+        c = classify(title, url, subject)
+        return c["rtype"], c["level"], c["session"], c["year"], c["tz"]
+
+    rows = []
+    for title, url, source, subject, extra, ts in db.execute(
+            "SELECT filename,url,source,subject,sha256,fetched_at FROM files"):
+        c = classify(title, url, subject)
+        rows.append(("file", title, url, source, subject, extra,
+                     ts_of(url) or ts, c["rtype"], c["level"],
+                     c["session"], c["year"], c["tz"]))
+    for url, source, name, size, year, session, parent, _f, ts in db.execute(
+            "SELECT url,source,name,size,year,session,parent,fetched_at,ts"
+            " FROM remote_files"):
+        subj = f"{year} {session} {parent}"
+        c = classify(name, url, subj)
+        rows.append(("remote", name, url, source, subj, "",
+                     ts, c["rtype"], c["level"],
+                     c["session"] or session, c["year"] or year, c["tz"]))
+    for url, host, plat in db.execute("SELECT url,host,platform FROM links"):
+        rows.append(("link", url, url, plat, host, "", "", "other", "", "", "", ""))
+    db.executemany("INSERT INTO fts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", rows)
     db.commit()
     n = db.execute("SELECT COUNT(*) FROM fts").fetchone()[0]
     db.close()

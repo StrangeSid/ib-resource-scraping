@@ -5,9 +5,9 @@ Dates are commit dates (`git log --format="%ad" --date=short`).
 
 ## Unreleased
 
-- Search upgrade: prefix matching ("Histor"→"History"), parent-path + URL
-  metadata indexed, derived dates (mtime/year/URL), `sort=recent`, UI sort
-  toggle + date chips. 44 tests.
+- Classification: `classify.py` (rtype/level/session/year/tz) indexed for all
+  61,863 rows. `/search` filters (rtype/level/session/year) + `/facets`.
+  UI filter dropdowns + rtype labels. 49 tests.
 
 ## v0.4.0 — 2026-10-10
 
