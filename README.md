@@ -1,125 +1,208 @@
 # ib-resource-scraping
 
-One searchable local index of IB resources from across the web —
-past papers, markschemes, grade boundaries, question banks, notes —
-instead of a dozen disconnected mirrors.
+One searchable index of **53,000+ IB resources** across the web — past papers, markschemes, grade boundaries, question banks, textbooks, and notes — instead of a dozen disconnected mirrors.
 
-> [!NOTE]
-> Catalog-first: metadata for everything, bytes on demand or proof-scale.
-> `store/` stays local (gitignored); `manifests/` catalogs are committed.
+Hosted live index: **[https://ib-scrape.sidevv.xyz](https://ib-scrape.sidevv.xyz)**  
+Web interface: **[https://ib-scrape.sidevv.xyz/](https://ib-scrape.sidevv.xyz/)**
 
-## Sources
+> [!TIP]
+> **Catalog-first architecture**: `ib-scrape.sidevv.xyz` serves as the public, maintained central index. AI agents and local instances can query the index freely, while file downloads stream on-demand or save into your personal local storage.
 
-| Source | Connector | Access |
-|---|---|---|
-| pirateIB repo (`repo.*`, TinyFileManager) | `tfm.py` + `uc_harvest.py` | UC auto-solve, then plain crawl |
-| IBDocs repo (`dl.*`, Dufs) | `dufs.py` | Same UC chain, `?json` API |
-| XtremePapers (fdscript) | `xtreme.py` | Open, direct PDF links |
-| ibdocs.re catalog | `ibdocs.py` | Open, SSR rows |
-| brilliantlearning.in | `wp_rest.py` | Open WP REST (incl. `_pda` URLs) |
-| pirateib.sh/ibnotes | `ibnotes.py` | Open link graph (623 links) |
-| Mirror health | `mirror_api.py` | Open JSON API |
-| Google Drive | `drive.py` | `DRIVE_API_KEY` |
-| pirateIB git | `git_mirror.py` | Open clone |
+---
 
-Research log: [`FINDINGS.md`](FINDINGS.md) · Agent skill: [`skill/SKILL.md`](skill/SKILL.md) ·
-Full docs: [`DOCS.md`](DOCS.md) · History: [`CHANGELOG.md`](CHANGELOG.md)
+## 🚀 Public Hosted API
 
-## Quickstart
+The API is deployed and ready to query with zero local setup:
+
+**Base URL:** `https://ib-scrape.sidevv.xyz`
+
+### Quick API Routes
+
+| Endpoint | Method | Params | Description |
+|---|---|---|---|
+| `/search` | `GET` | `q`, `rtype`, `level`, `session`, `year`, `limit` | Ranked full-text search across 53k+ resources |
+| `/facets` | `GET` | `q`, `kind` | Resource aggregation counts (types, levels, sessions) |
+| `/resources/{sha}` | `GET` | — | Metadata record for a specific resource SHA-256 |
+| `/download/{sha}` | `GET` | — | HTTP 307 redirect straight to upstream file host |
+| `/stats` | `GET` | — | Catalog size, source counts, and index health |
+| `/mirrors` | `GET` | `refresh=true` | Mirror liveness and uptime status |
+| `/links` | `GET` | `q`, `platform`, `limit` | Outbound Google Drive / MEGA resource graph |
+| `/recent` | `GET` | `limit` | Most recently indexed items |
+| `/health` | `GET` | — | Service status and runtime mode |
+
+### Example Queries
+
+```sh
+# 1. Search for physics past papers (HL)
+curl "https://ib-scrape.sidevv.xyz/search?q=physics&rtype=paper&level=hl&limit=5"
+
+# 2. Inspect available resource types and levels for mathematics
+curl "https://ib-scrape.sidevv.xyz/facets?q=mathematics"
+
+# 3. Get resource metadata
+curl "https://ib-scrape.sidevv.xyz/resources/a877c616794ed4e8979adb32e5be3520815f637418b66edb1f2eebc73cb18c69"
+
+# 4. Download file (follows HTTP 307 redirect directly to mirror)
+curl -L "https://ib-scrape.sidevv.xyz/download/a877c616794ed4e8979adb32e5be3520815f637418b66edb1f2eebc73cb18c69" -o boundaries.pdf
+
+# 5. Check mirror statuses
+curl "https://ib-scrape.sidevv.xyz/mirrors"
+```
+
+All responses follow the JSON envelope: `{"status": "ok", "data": ..., "meta": ...}`.
+
+---
+
+## 🤖 Agentic Use: MCP Server & Skill
+
+The hosted API is designed directly for AI coding assistants and agents (Claude Desktop, Cursor, OpenCode, Windsurf, Claude Code).
+
+### 1. Install Agent Skill (OpenCode / Claude)
+
+Install the skill with one command:
+
+```sh
+mkdir -p ~/.config/opencode/skills/ib-resources
+curl -sSL https://raw.githubusercontent.com/StrangeSid/ib-resource-scraping/master/skill/SKILL.md \
+  -o ~/.config/opencode/skills/ib-resources/SKILL.md
+```
+
+The skill gives agents instant access to search syntax, filter facets, and download shortcuts.
+
+### 2. Configure MCP Server
+
+The MCP server connects to `https://ib-scrape.sidevv.xyz` by default without requiring any local database files.
+
+#### Claude Desktop (`claude_desktop_config.json`)
+
+```json
+{
+  "mcpServers": {
+    "ib-resources": {
+      "command": "python3",
+      "args": ["/path/to/ib-resource-scraping/mcp_server.py"],
+      "env": {
+        "IB_API_BASE": "https://ib-scrape.sidevv.xyz"
+      }
+    }
+  }
+}
+```
+
+#### OpenCode (`opencode.json` / `~/.config/opencode/opencode.json`)
+
+```json
+{
+  "mcpServers": {
+    "ib-resources": {
+      "command": "python3",
+      "args": ["/path/to/ib-resource-scraping/mcp_server.py"],
+      "env": {
+        "IB_API_BASE": "https://ib-scrape.sidevv.xyz"
+      }
+    }
+  }
+}
+```
+
+#### Cursor (`.cursor/mcp.json` or Settings → MCP)
+
+Add new stdio command:
+- **Command:** `python3`
+- **Args:** `/path/to/ib-resource-scraping/mcp_server.py`
+- **Env:** `IB_API_BASE=https://ib-scrape.sidevv.xyz`
+
+#### Claude Code CLI
+
+```sh
+claude mcp add ib-resources -- python3 /path/to/ib-resource-scraping/mcp_server.py
+```
+
+### MCP Tools Available
+
+- `search(q, rtype, level, year, session, limit)` — Full-text search over papers, markschemes, and notes.
+- `facets(q, kind)` — Breakdown of resource counts across types and syllabus levels.
+- `resource(sha256)` — Retrieve metadata by SHA-256 hash.
+- `download_url(sha256)` — Get the direct download URL for a file.
+- `mirrors(refresh)` — Check health and uptime of IB mirrors.
+- `links(q, platform, limit)` — Search curated Google Drive / MEGA links.
+- `stats()` — Check index counts and source totals.
+
+---
+
+## 💾 Personal Downloads & Local Instances
+
+You can use the public API as your index while saving downloads into your personal local storage.
+
+### Pull files to local store (`scripts/pull.py`)
+
+```sh
+# Search hosted API and download top matches to your personal local store:
+python scripts/pull.py --search "Physics HL Paper 1 May 2024" --limit 3
+
+# Pull single file by SHA:
+python scripts/pull.py --sha a877c616794ed4e8979adb32e5be3520815f637418b66edb1f2eebc73cb18c69
+
+# Search without downloading (dry run):
+python scripts/pull.py --search "Chemistry SL" --dry-run
+```
+
+Files are verified and saved into content-addressed blobs at `store/blobs/` and registered into local SQLite index.
+
+### Point local Web UI to hosted API
+
+Open the web interface locally and point it directly to the hosted API:
+
+```sh
+open ui/index.html   # append ?api=https://ib-scrape.sidevv.xyz
+```
+
+The UI persists your API base in `localStorage`.
+
+### Run local self-hosted API (optional)
+
+If you wish to run a self-hosted API server with a local SQLite index:
 
 ```sh
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
-```
-
-Gather catalogs (no bytes):
-
-```sh
-./.venv/bin/python scripts/gather.py --only mirrors,ibnotes --store store
-./.venv/bin/python scripts/gather.py --only wp --wp-index-only
-./.venv/bin/python scripts/gather.py --only ibdocs --ibdocs-all
-./.venv/bin/python scripts/gather.py --only xtreme --xtreme-root "./IB/" --xtreme-max 3000
-./.venv/bin/python scripts/gather.py --only dufs --uc-harvest --dufs-host https://dl.pirateib.sh
-```
-
-Download proof-scale bytes:
-
-```sh
-./.venv/bin/python scripts/gather.py --only wp --search "grade boundaries" --limit 10
-```
-
-Cloudflare hosts (auto-solve needs trial-only `seleniumbase` + `curl_cffi`):
-
-```sh
-./.venv/bin/python scripts/gather.py --only tfm --uc-harvest \
-  --tfm-host https://repo.pirateib.sh --tfm-crawl --limit 0
-# or manual solve + exported cookies
-./.venv/bin/python scripts/gather.py --only tfm --tfm-host https://repo.pirateib.sh \
-  --cookies cookies.txt --tfm-path "IB DOCUMENTS"
-```
-
-## API
-
-```sh
 ./.venv/bin/python -m uvicorn api.main:app --port 8471
-./.venv/bin/python mcp_server.py   # stdio, for agents
 ```
 
-| Route | Example |
-|---|---|
-| `GET /search?q=&kind=` | `curl "localhost:8471/search?q=grade+boundaries"` |
-| `GET /resources/{sha}` | record + `local` flag |
-| `GET /download/{sha}` | bytes, or 404 + `X-Source-URL` |
-| `GET /mirrors` | `?refresh=true` to re-poll |
-| `GET /links?q=&platform=` | ibnotes graph |
-| `GET /stats`, `/recent`, `/health` | index totals, latest, liveness |
+---
 
-Every response: `{status, data, meta}`.
+## 📦 Data Sources
 
-## Tests
+| Source | Connector | Access Method |
+|---|---|---|
+| pirateIB repo (`repo.*`, TinyFileManager) | `tfm.py` + `uc_harvest.py` | Headless Turnstile clearance + plain crawl |
+| IBDocs repo (`dl.*`, Dufs) | `dufs.py` | Same Turnstile chain, `?json` API |
+| XtremePapers (fdscript) | `xtreme.py` | Open direct PDF links |
+| ibdocs.re catalog | `ibdocs.py` | Open SSR rows |
+| brilliantlearning.in | `wp_rest.py` | Open WP REST (includes `_pda` files) |
+| pirateib.sh/ibnotes | `ibnotes.py` | Curated link graph (623 links) |
+| Mirror health | `mirror_api.py` | Realtime status JSON API |
+| Google Drive | `drive.py` | Google Drive API key |
+| pirateIB git | `git_mirror.py` | Open git clone |
+
+---
+
+## 🧪 Testing & Verification
+
+The test suite runs entirely offline using mocked HTTP calls:
 
 ```sh
 ./.venv/bin/pip install -r requirements-dev.txt
-./.venv/bin/python -m pytest tests/ -q   # 49 green, no live network
+./.venv/bin/python -m pytest tests/ -q
+# 55 passed in <10s
 ```
 
-## Deploy
+---
 
-**Cloud (search + direct downloads, e.g. `ib-scrape.sidevv.xyz`):**
-API runs in cloud catalog mode — read-only search over committed
-`manifests/`, downloads 307-redirect to source hosts. No disk, no keys.
+## 📚 Documentation & Research
 
-```sh
-# from repo root (FastAPI preset serves main:app as one function)
-vercel --prod
-# dashboard: Settings → Domains → add ib-scrape.sidevv.xyz
-# DNS: CNAME ib-scrape -> cname.vercel-dns.com
-```
-
-Same domain serves UI (`/`) + API (`/search`, `/stats`, …).
-`CLOUD_MODE=1` forces cloud; `CLOUD_MODE=0` forces local.
-`GET /mirrors?refresh=true` is 403 in cloud (self-host for live polling).
-Project needs Framework Preset = FastAPI (set once; keeps `/` + `/search`
-on one function instead of per-file `/api/*` routes). `store/` is excluded
-from uploads via `.vercelignore`, which is what flips auto-detect to cloud.
-
-**Self-host (your own searchable downloads):** clone, gather bytes, serve.
-
-```sh
-git clone https://github.com/StrangeSid/ib-resource-scraping && cd ib-resource-scraping
-python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt
-./.venv/bin/python scripts/gather.py --only mirrors,ibnotes --store store
-./.venv/bin/python scripts/gather.py --only wp --search "grade boundaries" --limit 10
-CLOUD_MODE=0 ./.venv/bin/python -m uvicorn api.main:app --port 8471
-# UI: open http://localhost:8471/ , or point the cloud UI at it once with ?api=http://localhost:8471
-```
-
-Docker / k8s / Cloud Run (local-mode images, persistent disk):
-
-```sh
-docker build -t ib-resources . && docker compose up -d   # :8471
-kubectl apply -f k8s/app.yaml                             # cluster
-PROJECT=myproj ./scripts/deploy_gcloud.sh                 # Cloud Run
-```
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). License: GPLv3 — see [`LICENSE`](LICENSE).
+- **Research findings & mirror history:** [`FINDINGS.md`](FINDINGS.md)
+- **Detailed architecture & connector docs:** [`DOCS.md`](DOCS.md)
+- **Agent skill instructions:** [`skill/SKILL.md`](skill/SKILL.md)
+- **Contributing guidelines:** [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- **Release notes:** [`CHANGELOG.md`](CHANGELOG.md)

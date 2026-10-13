@@ -2,88 +2,107 @@
 
 ## 1. What this is
 
-Defragmented local compilation of IB resources (past papers, markschemes,
-grade boundaries, question banks, notes) gathered from pirateIB/IBDocs
-mirrors, XtremePapers, WordPress sites, and curated link graphs.
-Read path: FastAPI (`:8471`) or MCP stdio. Research log: `FINDINGS.md`.
+Defragmented compilation of International Baccalaureate (IB) resources
+(past papers, markschemes, grade boundaries, question banks, subject notes, textbooks)
+gathered from pirateIB/IBDocs mirrors, XtremePapers, WordPress sites, and curated link graphs.
+
+- **Centralized Public Index:** Hosted and continuously maintained at `https://ib-scrape.sidevv.xyz`.
+- **Personal Local Storage:** Local instances point to the public index for metadata while downloading and storing personal files locally in content-addressed storage.
+- **Agentic Access:** FastMCP stdio server and OpenCode/Claude agent skills point directly to the index.
 
 ## 2. Architecture
 
 ```
-sources ──▶ connectors (ib_scrape/connectors/) ──▶ store/
-  WP REST        wp_rest.py      blobs/<sha256[:2]/[2:4]/<sha>-<name>
-  ibdocs.re      ibdocs.py       index.sqlite (files, remote_files, links, fts)
-  pirateib.sh    ibnotes.py      manifests/*.json (committed catalogs)
-  mirror API     mirror_api.py
-  git host       git_mirror.py
-  TFM repos      tfm.py (+ uc_harvest.py clearance)
-  Drive          drive.py (DRIVE_API_KEY)
-  XtremePapers   xtreme.py
-  Dufs hosts     dufs.py (+ uc_harvest.py clearance)
+                    ┌──────────────────────────────────────────────┐
+                    │  Hosted Public Index / Catalog               │
+                    │  https://ib-scrape.sidevv.xyz (Vercel)       │
+                    │  • Read-only search & facets over manifests  │
+                    │  • Direct 307 redirects to upstream files    │
+                    └──────────────────────┬───────────────────────┘
+                                           │
+           ┌───────────────────────────────┼──────────────────────────────┐
+           ▼                               ▼                              ▼
+┌──────────────────────┐        ┌──────────────────────┐       ┌──────────────────────┐
+│  AI Agents (MCP)     │        │  Local Storage CLI   │       │  Local Self-Host     │
+│  mcp_server.py       │        │  scripts/pull.py     │       │  api/main.py (:8471) │
+│  • search, facets    │        │  • pulls files by    │       │  • SQLite + FTS5     │
+│  • resources, links  │        │    SHA or search     │       │  • blobs/ storage    │
+│  • download URLs     │        │  • dedups into blobs │       │  • optional mirror   │
+└──────────────────────┘        └──────────────────────┘       └──────────────────────┘
 ```
 
-Dedup: sha256 content address for bytes; URL primary key for catalog rows.
-FTS5 (porter) over all three tables, rebuilt by every `gather` run.
+- **Content Addressing:** SHA-256 content address for local binary blobs (`store/blobs/ab/cd/<sha>-<filename>`).
+- **Catalog Dedup:** Canonical URL primary keys for remote catalog entries.
+- **Classification Engine:** `ib_scrape/classify.py` detects resource type (`rtype`), difficulty level (`level`), examination session (`sess`), year (`yr`), and timezone (`tz`).
 
-## 3. API reference (`api/main.py`)
+## 3. Public API reference (`https://ib-scrape.sidevv.xyz`)
 
-Envelope `{status, data, meta}` on every route.
+All responses adhere to the standard JSON envelope: `{status, data, meta}`.
 
-| Route | Params | Notes |
-|---|---|---|
-| `GET /health` | — | store path + indexed flag |
-| `GET /stats` | — | files, bytes, by_source, remote_catalog, links, indexed |
-| `GET /search` | `q` (min 2), `kind=file\|remote\|link`, `limit`, `offset` | FTS rank order |
-| `GET /resources/{sha}` | — | record + `local` bool |
-| `GET /download/{sha}` | — | bytes if local; 404 + `X-Source-URL` if remote-only |
-| `GET /mirrors` | `refresh` | cached snapshot or live re-poll |
-| `GET /links` | `q`, `platform`, `limit` | ibnotes graph |
-| `GET /recent` | `limit` | latest local files |
+| Route | Method | Query Parameters | Description |
+|---|---|---|---|
+| `/health` | `GET` | — | Liveness check, mode (`cloud` vs `local`), indexed status |
+| `/stats` | `GET` | — | File count, storage bytes, source breakdown, remote catalog count |
+| `/search` | `GET` | `q` (min 2), `kind`, `rtype`, `level`, `session`, `year`, `sort`, `limit`, `offset` | Ranked full-text search across 53,000+ resources |
+| `/facets` | `GET` | `q`, `kind` | Resource aggregation counts for `rtype`, `level`, `sess`, `yr`, `tz` |
+| `/resources/{sha}` | `GET` | — | Metadata record for a specific resource SHA-256 |
+| `/download/{sha}` | `GET` | — | HTTP 307 redirect to source file (cloud mode) or binary stream (local) |
+| `/mirrors` | `GET` | `refresh=true` | Status and uptime metrics across mirror hosts |
+| `/links` | `GET` | `q`, `platform`, `limit` | Curated outbound link graph (Google Drive, MEGA, etc.) |
+| `/recent` | `GET` | `limit` | Most recently indexed resource entries |
 
-## 4. MCP server (`mcp_server.py`)
+### Search filters:
+- `kind`: `remote` (upstream file), `file` (indexed blob), `link` (external repository/drive)
+- `rtype`: `paper`, `markscheme`, `textbook`, `notes`, `syllabus`, `boundaries`, `specimen`, `exemplar`, `report`
+- `level`: `HL`, `SL`, `MYP`, `CORE`
+- `session`: `may`, `november`
+- `sort`: `rank` (FTS relevancy) or `recent` (chronological)
 
-Stdio, verified live (handshake + tools/list + search call over real transport).
-Tools `search`, `resource`, `stats`, `mirrors`, `links` over same index.
-`STORE`/`MANIFESTS` env overrides. Pinned `mcp<2` (v2 drops FastMCP).
-Wire via `mcp.example.json` (copy, fix paths). Quirk: FastMCP unwraps
-single-item lists — clients must accept object-or-array.
+## 4. MCP Server (`mcp_server.py`)
 
-## 5. Cloudflare chain (repo.*/dl.*/mirrors)
+Stdio transport for Claude Desktop, Cursor, OpenCode, and Windsurf.
 
-Binding = cookies + UA + TLS triple. `requests` alone always 403.
-`uc_harvest.harvest()` (SeleniumBase UC headless) solves the managed
-challenge; `cffi_session()` replays with chrome TLS impersonation
-(`curl_cffi`). TFMClient must NOT overwrite the injected session UA
-(regression tested). Clearance is short-lived: harvest, then crawl at once.
+- **Hosted Remote Mode (default when local DB absent):** Queries `https://ib-scrape.sidevv.xyz` via lightweight stdlib HTTP requests. Zero local files or database required.
+- **Local SQLite Mode:** Operates on local `STORE/index.sqlite` when present.
+- **Configuration Override:** Set `IB_API_BASE` in the environment to point MCP to any custom instance.
 
-## 6. Source notes
+Exposed Tools:
+1. `search(q, kind, limit, rtype, level, year, session)`: Multi-facet full-text search.
+2. `facets(q, kind)`: Get counts by resource type and syllabus level.
+3. `resource(sha256)`: Retrieve metadata for a resource.
+4. `download_url(sha256)`: Get the download/redirect URL for retrieving files.
+5. `stats()`: Catalog size and source counts.
+6. `mirrors(refresh)`: Mirror availability status.
+7. `links(q, platform, limit)`: Query outbound cloud storage links.
 
-- **TFM** (`repo.*`, TinyFileManager 2.5.3): `?p=` paths, row parser
-  (`list_full`: dirs/files/sizes/direct links). Title-less dir rows exist.
-- **Dufs** (`dl.*`): `?json` per directory
-  (`paths: [{path_type, name, mtime, size}]`); `?zip` archives per dir.
-- **XtremePapers** (fdscript): needs browser header set; `+`/space
-  normalization; root containment (CAIE escape); direct `IB/**/*.pdf` hrefs.
-- **WP** (brilliantlearning.in): open `/wp-json/wp/v2/media`; `source_url`
-  works directly incl. `_pda` paths. `--wp-index-only` for catalogs.
-- **ibdocs.re**: SSR `a.file-row` rows; 404-tolerant session sweep.
-- **Village**: AES-encrypted `*.questionData.js`, atob-derived key — needs
-  runtime hook (deferred, host throttled).
-- **Gated**: RevisionHub (Clerk), RevisionDojo PRO (account), Drive folders
-  (API key), Turnstile widgets (manual solve).
+## 5. Local storage & pull CLI (`scripts/pull.py`)
 
-## 7. Testing
+Save files from the public index into personal local storage:
 
-`requirements-dev.txt` + `pytest tests/ -q`. No live network in tests:
-HTTP mocked (`MagicMock` sessions), TestClient for API, tmp stores.
-Rules in `CONTRIBUTING.md`.
+```sh
+# Pull by SHA-256:
+python scripts/pull.py --sha a877c616794ed4e8979adb32e5be3520815f637418b66edb1f2eebc73cb18c69
 
-## 8. Troubleshooting
+# Search and download matching files into local store:
+python scripts/pull.py --search "Physics HL Paper 1" --limit 5
 
-| Symptom | Cause → fix |
-|---|---|
-| 403 on CF hosts | stale clearance → re-harvest right before crawl |
-| `challenge held` | UC failed this round → retry (flaky), wait, retry |
-| UC `SB` import error | `pip install seleniumbase` (trial-only) |
-| cffi 403 | UA overwritten or impersonation mismatch → keep harvested UA |
-| FTS count off | rebuild: any `gather` run calls `index_fts.build` |
+# Preview matches without downloading:
+python scripts/pull.py --search "Chemistry May 2024" --dry-run
+```
+
+Files are verified by content hash and saved to `store/blobs/<h[:2]>/<h[2:4]>/<h>-<filename>`.
+
+## 6. Cloudflare bypass & connector chain
+
+For scraping protected mirrors directly (`scripts/gather.py`):
+1. **Binding:** `cf_clearance` cookies + User-Agent + TLS fingerprint matching.
+2. **Harvest:** `uc_harvest.harvest()` launches headless SeleniumBase UC to clear Turnstile / managed challenges.
+3. **Replay:** `cffi_session()` impersonates Chrome TLS profile via `curl_cffi` using harvested credentials.
+4. **Crawl:** `tfm.py` parses TinyFileManager directories; `dufs.py` queries `?json` API on Dufs hosts.
+
+## 7. Testing standards
+
+- Run test suite: `pytest tests/ -q` (55 passing tests).
+- Mock all HTTP interactions (`unittest.mock.patch` / `MagicMock`).
+- No live network calls allowed in unit tests.
+- tmp directories used for filesystem isolation.

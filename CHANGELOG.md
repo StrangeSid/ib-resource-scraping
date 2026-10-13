@@ -3,6 +3,24 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
+## v0.7.0 — 2026-10-13
+
+- Hosted public index & API deployed at `https://ib-scrape.sidevv.xyz`.
+- MCP server remote support: stdio `mcp_server.py` queries hosted API out of the
+  box with zero local database required, or falls back to local SQLite. Added
+  `facets` and `download_url` tools.
+- Agent skill & MCP installation guides for Claude Desktop, Cursor, and OpenCode.
+- `scripts/pull.py`: pull resources from public index into personal local `store/`.
+- Docs cleanup across `README.md`, `DOCS.md`, `SKILL.md`, and `mcp.example.json`.
+- 55 unit tests green.
+
+## v0.6.0 — 2026-10-11
+
+- Cloud catalog mode (`api/cloud.py`): serverless in-memory search over committed
+  manifests for Vercel deployment.
+- Direct download redirects: HTTP 307 on `/download/{sha}` straight to source mirrors.
+- Root FastAPI preset entrypoint (`main.py`) for unified UI + API serving.
+
 ## v0.5.0 — 2026-10-10
 
 - Classification: `classify.py` (rtype/level/session/year/tz) indexed for all

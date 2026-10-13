@@ -80,5 +80,40 @@ def test_mcp_stdio_transport(tmp_path, monkeypatch):
         hits = raw if isinstance(raw, list) else [raw]
     finally:
         p.kill()
-    assert {"search", "resource", "stats", "mirrors", "links"} <= names
+    assert {"search", "resource", "download_url", "stats", "mirrors", "links", "facets"} <= names
     assert len(hits) == 1 and hits[0]["title"] == "biology-notes"
+
+
+def test_mcp_remote_mode(monkeypatch):
+    import io
+    import urllib.error
+    from unittest.mock import patch, MagicMock
+
+    monkeypatch.setenv("IB_API_BASE", "https://mock-api.local")
+    mock_responses = {
+        "/search": {"status": "ok", "data": [{"title": "Remote Bio", "url": "http://x"}]},
+        "/resources/abc": {"status": "ok", "data": {"sha256": "abc", "filename": "bio.pdf"}},
+        "/stats": {"status": "ok", "data": {"files": 42}},
+        "/mirrors": {"status": "ok", "data": [{"name": "mock-mirror"}]},
+        "/links": {"status": "ok", "data": [{"url": "http://gdrive"}]},
+        "/facets": {"status": "ok", "data": {"rtype": [{"value": "paper", "count": 10}]}},
+    }
+
+    def fake_urlopen(req, timeout=15):
+        url = req.full_url
+        for path, data in mock_responses.items():
+            if path in url:
+                resp = MagicMock()
+                resp.__enter__.return_value = resp
+                resp.read.return_value = json.dumps(data).encode("utf-8")
+                return resp
+        raise urllib.error.HTTPError(url, 404, "Not Found", {}, io.BytesIO(b""))
+
+    with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+        assert M.search("bio")[0]["title"] == "Remote Bio"
+        assert M.resource("abc")["filename"] == "bio.pdf"
+        assert M.stats()["files"] == 42
+        assert M.mirrors()[0]["name"] == "mock-mirror"
+        assert M.links()[0]["url"] == "http://gdrive"
+        assert M.facets()["rtype"][0]["count"] == 10
+        assert M.download_url("abc")["url"] == "https://mock-api.local/download/abc"

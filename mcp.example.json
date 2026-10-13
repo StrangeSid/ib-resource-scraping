@@ -1,12 +1,19 @@
 {
   "mcpServers": {
     "ib-resources": {
-      "command": "/path/to/ib-resource-scraping/.venv/bin/python",
-      "args": ["mcp_server.py"],
-      "cwd": "/path/to/ib-resource-scraping",
+      "command": "python3",
+      "args": ["/absolute/path/to/ib-resource-scraping/mcp_server.py"],
       "env": {
-        "STORE": "/path/to/ib-resource-scraping/store",
-        "MANIFESTS": "/path/to/ib-resource-scraping/manifests"
+        "IB_API_BASE": "https://ib-scrape.sidevv.xyz"
+      }
+    },
+    "ib-resources-local": {
+      "command": "/absolute/path/to/ib-resource-scraping/.venv/bin/python",
+      "args": ["mcp_server.py"],
+      "cwd": "/absolute/path/to/ib-resource-scraping",
+      "env": {
+        "STORE": "/absolute/path/to/ib-resource-scraping/store",
+        "MANIFESTS": "/absolute/path/to/ib-resource-scraping/manifests"
       }
     }
   }
