@@ -1,6 +1,6 @@
 [project]
 name = "ib-resources"
-version = "0.6.0"
+version = "0.7.0"
 description = "Searchable local index of IB resources (past papers, markschemes, question banks)"
 requires-python = ">=3.12"
 dependencies = [

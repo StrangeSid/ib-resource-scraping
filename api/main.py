@@ -33,7 +33,7 @@ def use_cloud() -> bool:
     return not (STORE / "index.sqlite").exists()
 
 
-app = FastAPI(title="ib-resources", version="0.6.0")
+app = FastAPI(title="ib-resources", version="0.7.0")
 
 from fastapi.middleware.cors import CORSMiddleware
 
