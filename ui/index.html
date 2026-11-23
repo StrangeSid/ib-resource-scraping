@@ -13,6 +13,7 @@
     --green: #1e4d3b;
     --amber: #8a5e14;
     --blue: #274268;
+    --mark: #f4e3a3;
   }
   * { box-sizing: border-box; }
   body {
@@ -39,8 +40,12 @@
     border: 2px solid var(--ink);
     border-radius: 3px;
     background: #fff;
+    color: var(--ink);
   }
-  input[type="search"]:focus-visible, button:focus-visible, a:focus-visible {
+  input[type="search"]:focus-visible,
+  select:focus-visible,
+  button:focus-visible,
+  a:focus-visible {
     outline: 3px solid var(--green);
     outline-offset: 2px;
   }
@@ -54,24 +59,115 @@
     border-radius: 3px;
     cursor: pointer;
   }
-  .kinds { display: flex; gap: 16px; margin: 0 0 24px; color: var(--faint); font-size: 0.95rem; }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .kinds {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    margin: 0 0 14px;
+    color: var(--faint);
+    font-size: 0.95rem;
+  }
   .kinds label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
-  #meta { color: var(--faint); font-size: 0.95rem; margin: 0 0 8px; min-height: 1.5em; }
+  .kinds select {
+    font: inherit;
+    font-size: 0.9rem;
+    padding: 4px 8px;
+    border: 1.5px solid var(--rule);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--ink);
+    max-width: 190px;
+  }
+  #filters {
+    margin-bottom: 20px;
+    padding-top: 10px;
+    border-top: 1px solid var(--rule);
+    gap: 10px 14px;
+  }
+  #clearFilters {
+    background: transparent;
+    color: var(--faint);
+    border: 1.5px solid var(--rule);
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: auto;
+  }
+  #clearFilters:hover { color: var(--ink); border-color: var(--ink); }
+  #meta {
+    color: var(--faint);
+    font-size: 0.95rem;
+    margin: 0 0 8px;
+    min-height: 1.5em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .kbd-hint {
+    font-size: 0.8rem;
+    color: var(--faint);
+    margin-left: auto;
+  }
+  kbd {
+    font: 0.78rem ui-monospace, SFMono-Regular, Menlo, monospace;
+    padding: 1px 5px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .loading { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+    animation: pulse 0.9s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.25; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1); }
+  }
   ol#results { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
   ol#results li {
     padding: 12px 4px;
     border-bottom: 1px solid var(--rule);
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: 2px 12px;
+    gap: 4px 12px;
+    align-items: center;
   }
+  .row-main { min-width: 0; }
   .t { font-weight: 600; overflow-wrap: anywhere; }
   .t a { color: inherit; text-decoration: none; }
   .t a:hover { text-decoration: underline; }
-  .s { color: var(--faint); font-size: 0.9rem; grid-column: 1; }
+  mark {
+    background: var(--mark);
+    color: inherit;
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+  .s { color: var(--faint); font-size: 0.9rem; margin-top: 2px; overflow-wrap: anywhere; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip {
+    font-size: 0.76rem;
+    font-weight: 600;
+    line-height: 1.3;
+    padding: 1px 7px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--faint);
+  }
+  .chip.rtype { color: var(--ink); border-color: #cfcbb9; }
+  .chip.level { color: var(--blue); border-color: #c7d2e0; }
+  .chip.sess { color: var(--green); border-color: #bfd3cb; }
+  .chip.tz { color: var(--amber); border-color: #dfd0b4; }
   .stamp {
-    grid-row: 1 / span 2;
-    align-self: center;
     font-size: 0.8rem;
     font-weight: 700;
     border: 1.5px solid currentColor;
@@ -90,15 +186,16 @@
     border: 2px solid var(--ink);
     font-weight: 600;
   }
-  .dl { font-size: 0.9rem; margin-left: 8px; }
-  .dl { font-size: 0.9rem; }
+  .dl { font-size: 0.88rem; font-weight: 500; margin-left: 8px; color: var(--green); }
   footer { margin-top: 40px; color: var(--faint); font-size: 0.9rem; border-top: 1px solid var(--rule); padding-top: 12px; }
   @media (max-width: 560px) {
     form { flex-direction: column; }
-    button { width: 100%; }
+    form button[type="submit"] { width: 100%; }
+    #clearFilters { margin-left: 0; }
+    .kbd-hint { display: none; }
   }
   @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; }
+    * { transition: none !important; animation: none !important; }
   }
 </style>
 </head>
@@ -122,11 +219,16 @@
         <option value="recent">Newest first</option>
       </select>
     </label>
+    <span class="kbd-hint">Press <kbd>/</kbd> to focus</span>
   </div>
   <div class="kinds" id="filters" style="display:none" aria-label="Filters">
     <label>Type <select id="f_rtype" aria-label="Resource type"></select></label>
     <label>Level <select id="f_level" aria-label="Level"></select></label>
     <label>Session <select id="f_sess" aria-label="Session"></select></label>
+    <label>Year <select id="f_yr" aria-label="Year"></select></label>
+    <label>Timezone <select id="f_tz" aria-label="Timezone"></select></label>
+    <label>Source <select id="f_source" aria-label="Source"></select></label>
+    <button id="clearFilters" type="button">Clear filters</button>
   </div>
   <p id="meta" aria-live="polite">Type two or more characters to search the index.</p>
   <ol id="results"></ol>
@@ -137,14 +239,142 @@
   <footer id="foot"></footer>
 </div>
 <script>
+const LIMIT = 30;
+const IDLE_MSG = "Type two or more characters to search the index.";
+const FILTERS = [
+  ["f_rtype", "rtype", "rtype"],
+  ["f_level", "level", "level"],
+  ["f_sess", "session", "sess"],
+  ["f_yr", "year", "yr"],
+  ["f_tz", "tz", "tz"],
+  ["f_source", "source", "source"],
+];
+
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const safeHref = (u) => {
+  const s = String(u || "").trim();
+  return /^(https?:\/\/|\/)/i.test(s) ? s : "#";
+};
+
+function decodeDisplay(s) {
+  if (s == null) return "";
+  let str = String(s);
+  str = str.replace(/(?:%[0-9A-Fa-f]{2})+/g, (m) => {
+    try { return decodeURIComponent(m); } catch { return m; }
+  });
+  if (str.includes("&")) {
+    const ta = decodeDisplay._ta || (decodeDisplay._ta = document.createElement("textarea"));
+    ta.innerHTML = str;
+    str = ta.value;
+  }
+  return str;
+}
+
+function highlight(raw, q) {
+  const text = decodeDisplay(raw);
+  if (!text) return "";
+  const tokens = [...new Set((q || "").toLowerCase().match(/[a-z0-9]+/g) || [])]
+    .sort((a, b) => b.length - a.length);
+  if (!tokens.length) return esc(text);
+  const re = new RegExp(`(${tokens.map(escRe).join("|")})`, "gi");
+  let out = "";
+  let last = 0;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out += esc(text.slice(last, m.index));
+    out += `<mark>${esc(m[0])}</mark>`;
+    last = re.lastIndex;
+  }
+  if (last < text.length) out += esc(text.slice(last));
+  return out;
+}
+
+const API_PARAM = new URLSearchParams(location.search).get("api");
 // Split deploy (e.g. Vercel static UI + Cloud Run API): ?api=https://host or localStorage ib_api
 const API = (() => {
-  const q = new URLSearchParams(location.search).get("api");
-  if (q) { try { localStorage.setItem("ib_api", q); } catch {} return q.replace(/\/$/, ""); }
+  if (API_PARAM) { try { localStorage.setItem("ib_api", API_PARAM); } catch {} return API_PARAM.replace(/\/$/, ""); }
   try { return (localStorage.getItem("ib_api") || "").replace(/\/$/, ""); } catch { return ""; }
 })();
+
+const selectedKind = () => {
+  const el = document.querySelector('input[name="kind"]:checked');
+  return el ? el.value : "";
+};
+
+function buildApiParams({ includeQuery = true, offset = null } = {}) {
+  const p = new URLSearchParams();
+  const q = $("q").value.trim();
+  if (includeQuery && q.length >= 2) p.set("q", q);
+  const kind = selectedKind();
+  if (kind) p.set("kind", kind);
+  if (offset !== null) {
+    p.set("limit", String(LIMIT));
+    p.set("offset", String(offset));
+    p.set("sort", $("sort").value);
+  }
+  for (const [id, param] of FILTERS) {
+    const val = $(id).value;
+    if (val) p.set(param, val);
+  }
+  return p;
+}
+
+function syncUrl(offset = 0) {
+  const p = new URLSearchParams();
+  if (API_PARAM) p.set("api", API_PARAM);
+  const q = $("q").value.trim();
+  if (q) p.set("q", q);
+  const kind = selectedKind();
+  if (kind) p.set("kind", kind);
+  const sort = $("sort").value;
+  if (sort && sort !== "rank") p.set("sort", sort);
+  for (const [id, param] of FILTERS) {
+    const val = $(id).value;
+    if (val) p.set(param, val);
+  }
+  if (q.length >= 2 && offset > 0) p.set("offset", String(offset));
+  const qs = p.toString();
+  const next = location.pathname + (qs ? "?" + qs : "") + location.hash;
+  try { history.replaceState(null, "", next); } catch {}
+}
+
+function ensureOption(sel, val) {
+  if (!val) return;
+  if (![...sel.options].some((o) => o.value === val)) {
+    const opt = document.createElement("option");
+    opt.value = val;
+    opt.textContent = decodeDisplay(val);
+    sel.appendChild(opt);
+  }
+}
+
+function restoreFromUrl() {
+  const p = new URLSearchParams(location.search);
+  const q = p.get("q");
+  if (q) $("q").value = q;
+  const kind = p.get("kind") || "";
+  if (["", "file", "remote", "link"].includes(kind)) {
+    document.querySelectorAll('input[name="kind"]').forEach((el) => {
+      el.checked = el.value === kind;
+    });
+  }
+  const sort = p.get("sort");
+  if (sort === "rank" || sort === "recent") $("sort").value = sort;
+  let hasFilter = false;
+  for (const [id, param] of FILTERS) {
+    const val = p.get(param);
+    if (val) {
+      ensureOption($(id), val);
+      $(id).value = val;
+      hasFilter = true;
+    }
+  }
+  if (hasFilter) $("filters").style.display = "flex";
+  const offset = Math.max(0, parseInt(p.get("offset") || "0", 10) || 0);
+  return { q: (q || "").trim(), offset };
+}
 
 async function stats() {
   try {
@@ -164,84 +394,210 @@ async function stats() {
   } catch { /* offline stats stay static */ }
 }
 
-async function run(offset = 0) {
-  const q = $("q").value.trim();
-  if (q.length < 2) {
-    $("meta").textContent = "Type two or more characters to search the index.";
-    $("results").innerHTML = "";
-    return;
+let searchCtrl = null;
+let facetCtrl = null;
+
+function renderChips(r) {
+  const chips = [];
+  if (r.rtype && r.rtype !== "other") {
+    chips.push(`<span class="chip rtype">${esc(decodeDisplay(r.rtype))}</span>`);
   }
-  const kind = document.querySelector('input[name="kind"]:checked').value;
-  const sort = $("sort").value;
-  const f = (id) => $(id).value;
-  let url = `${API}/search?q=${encodeURIComponent(q)}&limit=30&offset=${offset}&sort=${sort}` + (kind ? `&kind=${kind}` : "");
-  for (const [id, p] of [["f_rtype", "rtype"], ["f_level", "level"], ["f_sess", "session"]]) {
-    if (f(id)) url += `&${p}=${encodeURIComponent(f(id))}`;
+  if (r.level) {
+    chips.push(`<span class="chip level">${esc(decodeDisplay(r.level))}</span>`);
   }
-  let res;
-  try {
-    res = await (await fetch(url)).json();
-  } catch {
-    $("meta").textContent = "The index did not answer. Is the API running?";
-    return;
+  const sess = decodeDisplay(r.sess || "");
+  const yr = decodeDisplay(r.yr || "");
+  const sessYr = sess && yr
+    ? (sess.includes(yr) ? sess : `${sess} ${yr}`)
+    : (sess || yr);
+  if (sessYr) {
+    chips.push(`<span class="chip sess">${esc(sessYr)}</span>`);
   }
-  const rows = res.data;
-  const more = rows.length === 30;
-  $("pager").style.display = rows.length ? "flex" : "none";
-  $("prev").disabled = offset === 0;
-  $("next").disabled = !more;
-  window._off = offset;
-  $("meta").textContent = rows.length
-    ? `${rows.length} result${rows.length > 1 ? "s" : ""} for “${q}”${offset ? ` (from ${offset + 1})` : ""}`
-    : `Nothing filed under “${q}”. Try fewer or different words.`;
-  $("results").innerHTML = rows.map((r) => {
-    const link = `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>`;
-    const dl = r.kind === "file" && r.extra
-      ? `<a class="dl" href="${API}/download/${esc(r.extra)}">download</a>`
-      : r.kind === "remote"
-      ? `<a class="dl" href="${esc(r.url)}" target="_blank" rel="noopener">open / download</a>`
-      : "";
-    const when = r.ts ? ` · ${esc(r.ts.slice(0, 7))}` : "";
-    return `<li><span class="t">${link}${dl}</span><span class="stamp ${esc(r.kind)}">${esc(r.kind)}</span>` +
-      `<span class="s">${r.rtype && r.rtype !== "other" ? esc(r.rtype) + " · " : ""}${esc(r.source)}${r.subject ? " · " + esc(r.subject.split(" ").slice(0, 4).join(" ")) : ""}${when}</span></li>`;
-  }).join("");
-  facets();
+  if (r.tz) {
+    chips.push(`<span class="chip tz">${esc(decodeDisplay(r.tz))}</span>`);
+  }
+  if (r.source) {
+    chips.push(`<span class="chip source">${esc(decodeDisplay(r.source))}</span>`);
+  }
+  return chips.length ? `<div class="chips">${chips.join("")}</div>` : "";
 }
 
-$("prev").addEventListener("click", () => run(Math.max(0, (window._off || 0) - 30)));
-$("next").addEventListener("click", () => run((window._off || 0) + 30));
+function renderRows(rows, q) {
+  $("results").innerHTML = rows.map((r) => {
+    const href = safeHref(r.url);
+    const titleHtml = highlight(r.title || "", q);
+    const link = `<a href="${esc(href)}" target="_blank" rel="noopener">${titleHtml}</a>`;
+    const dl = r.kind === "file" && r.extra
+      ? `<a class="dl" href="${API}/download/${encodeURIComponent(r.extra)}">download</a>`
+      : r.kind === "remote"
+      ? `<a class="dl" href="${esc(href)}" target="_blank" rel="noopener">open / download</a>`
+      : "";
+    const subParts = [];
+    if (r.subject) subParts.push(highlight(r.subject, q));
+    if (r.ts) subParts.push(esc(String(r.ts).slice(0, 7)));
+    const subHtml = subParts.length ? `<div class="s">${subParts.join(" · ")}</div>` : "";
+    const chipsHtml = renderChips(r);
+    const kind = esc(r.kind || "");
+    return `<li><div class="row-main"><div class="t">${link}${dl}</div>${subHtml}${chipsHtml}</div>` +
+      `<span class="stamp ${kind}">${kind}</span></li>`;
+  }).join("");
+}
 
-$("f").addEventListener("submit", (e) => { e.preventDefault(); run(0); });
-document.querySelectorAll('input[name="kind"]').forEach((el) =>
-  el.addEventListener("change", () => run(0)));
-$("sort").addEventListener("change", () => run(0));
-for (const id of ["f_rtype", "f_level", "f_sess"]) {
-  $(id).addEventListener("change", () => run(0));
+function resetResults(msg = IDLE_MSG) {
+  $("meta").setAttribute("aria-busy", "false");
+  $("meta").textContent = msg;
+  $("results").innerHTML = "";
+  $("pager").style.display = "none";
+  window._off = 0;
 }
 
 async function facets() {
-  const q = $("q").value.trim();
-  const kind = document.querySelector('input[name="kind"]:checked').value;
-  let url = `${API}/facets?` + (q.length >= 2 ? `q=${encodeURIComponent(q)}&` : "") + (kind ? `kind=${kind}` : "");
+  if (facetCtrl) facetCtrl.abort();
+  const ctrl = new AbortController();
+  facetCtrl = ctrl;
+  const qs = buildApiParams({ includeQuery: true }).toString();
+  const url = `${API}/facets${qs ? "?" + qs : ""}`;
   let d;
   try {
-    d = (await (await fetch(url)).json()).data;
-  } catch { return; }
-  const map = [["f_rtype", "rtype"], ["f_level", "level"], ["f_sess", "sess"]];
+    const resp = await fetch(url, { signal: ctrl.signal });
+    if (!resp.ok) return;
+    d = (await resp.json()).data || {};
+  } catch (err) {
+    if (err && err.name === "AbortError") return;
+    return;
+  }
+  if (ctrl.signal.aborted) return;
   let any = false;
-  for (const [id, key] of map) {
-    const cur = $(id).value;
-    const opts = (d[key] || []).slice(0, 12);
-    $(id).innerHTML = `<option value="">All</option>` + opts.map((o) =>
-      `<option value="${esc(o.value)}">${esc(o.value)} (${o.count})</option>`).join("");
-    if ([...$(id).options].some((o) => o.value === cur)) $(id).value = cur;
-    if (opts.length) any = true;
+  for (const [id, , key] of FILTERS) {
+    const sel = $(id);
+    const cur = sel.value;
+    const opts = (d[key] || []).slice(0, 20);
+    sel.innerHTML = `<option value="">All</option>` + opts.map((o) =>
+      `<option value="${esc(o.value)}">${esc(decodeDisplay(o.value))} (${o.count})</option>`).join("");
+    if (cur) {
+      ensureOption(sel, cur);
+      sel.value = cur;
+    }
+    if (opts.length || cur) any = true;
   }
   $("filters").style.display = any ? "flex" : "none";
 }
-let t;
-$("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => run(0), 350); });
+
+async function run(offset = 0) {
+  const q = $("q").value.trim();
+  syncUrl(offset);
+  if (q.length < 2) {
+    if (searchCtrl) { searchCtrl.abort(); searchCtrl = null; }
+    resetResults(IDLE_MSG);
+    facets();
+    return;
+  }
+  if (searchCtrl) searchCtrl.abort();
+  const ctrl = new AbortController();
+  searchCtrl = ctrl;
+
+  $("meta").setAttribute("aria-busy", "true");
+  $("meta").innerHTML = `<span class="loading"><span class="dot" aria-hidden="true"></span>Searching…</span>`;
+
+  const searchUrl = `${API}/search?${buildApiParams({ includeQuery: true, offset }).toString()}`;
+  const searchPromise = fetch(searchUrl, { signal: ctrl.signal }).then(async (r) => {
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  });
+  facets();
+
+  let res;
+  try {
+    res = await searchPromise;
+  } catch (err) {
+    if (err && err.name === "AbortError") return;
+    if (ctrl.signal.aborted) return;
+    $("meta").setAttribute("aria-busy", "false");
+    $("meta").textContent = "The index did not answer. Is the API running?";
+    return;
+  }
+  if (ctrl.signal.aborted) return;
+
+  const rows = res.data || [];
+  const meta = res.meta || {};
+  const total = typeof meta.total === "number" ? meta.total : null;
+  const noMore = total !== null ? (offset + rows.length >= total) : (rows.length < LIMIT);
+
+  $("pager").style.display = (rows.length || offset > 0) ? "flex" : "none";
+  $("prev").disabled = offset <= 0;
+  $("next").disabled = noMore;
+  window._off = offset;
+
+  $("meta").setAttribute("aria-busy", "false");
+  if (rows.length) {
+    const start = offset + 1;
+    const end = offset + rows.length;
+    if (total !== null) {
+      $("meta").textContent = `${total.toLocaleString()} result${total === 1 ? "" : "s"} for “${q}” (showing ${start}–${end})`;
+    } else {
+      $("meta").textContent = `${rows.length} result${rows.length === 1 ? "" : "s"} for “${q}” (showing ${start}–${end})`;
+    }
+  } else if (offset > 0 && total) {
+    $("meta").textContent = `No more results for “${q}” (${total.toLocaleString()} total).`;
+  } else {
+    $("meta").textContent = `Nothing filed under “${q}”. Try fewer or different words.`;
+  }
+  renderRows(rows, q);
+}
+
+function clearAllFilters() {
+  for (const [id] of FILTERS) $(id).value = "";
+  const allRadio = document.querySelector('input[name="kind"][value=""]');
+  if (allRadio) allRadio.checked = true;
+  $("sort").value = "rank";
+  run(0);
+}
+
+$("prev").addEventListener("click", () => run(Math.max(0, (window._off || 0) - LIMIT)));
+$("next").addEventListener("click", () => run((window._off || 0) + LIMIT));
+$("f").addEventListener("submit", (e) => { e.preventDefault(); clearTimeout(debounceTimer); run(0); });
+document.querySelectorAll('input[name="kind"]').forEach((el) =>
+  el.addEventListener("change", () => run(0)));
+$("sort").addEventListener("change", () => run(0));
+for (const [id] of FILTERS) {
+  $(id).addEventListener("change", () => run(0));
+}
+$("clearFilters").addEventListener("click", clearAllFilters);
+
+let debounceTimer;
+$("q").addEventListener("input", () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => run(0), 250);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "/") {
+    const ae = document.activeElement;
+    const tag = ae ? ae.tagName : "";
+    if (tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT" && !(ae && ae.isContentEditable)) {
+      e.preventDefault();
+      $("q").focus();
+      $("q").select();
+    }
+  } else if (e.key === "Escape" && document.activeElement === $("q")) {
+    if ($("q").value) {
+      $("q").value = "";
+      clearTimeout(debounceTimer);
+      run(0);
+    } else {
+      $("q").blur();
+    }
+  }
+});
+
 stats();
+const initState = restoreFromUrl();
+if (initState.q.length >= 2) {
+  run(initState.offset);
+} else {
+  facets();
+}
 </script>
 </body>
 </html>

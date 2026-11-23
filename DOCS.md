@@ -43,20 +43,24 @@ All responses adhere to the standard JSON envelope: `{status, data, meta}`.
 |---|---|---|---|
 | `/health` | `GET` | — | Liveness check, mode (`cloud` vs `local`), indexed status |
 | `/stats` | `GET` | — | File count, storage bytes, source breakdown, remote catalog count |
-| `/search` | `GET` | `q` (min 2), `kind`, `rtype`, `level`, `session`, `year`, `sort`, `limit`, `offset` | Ranked full-text search across 53,000+ resources |
-| `/facets` | `GET` | `q`, `kind` | Resource aggregation counts for `rtype`, `level`, `sess`, `yr`, `tz` |
+| `/search` | `GET` | `q` (min 2), `kind`, `rtype`, `level`, `session`, `year`, `tz`, `source`, `sort`, `limit`, `offset` | Ranked full-text search across 53,900+ resources (`meta.total` included) |
+| `/facets` | `GET` | `q`, `kind`, `rtype`, `level`, `session`, `year`, `tz`, `source` | Filter-aware aggregation counts for `rtype`, `level`, `sess`, `yr`, `tz`, `kind`, `source` |
 | `/resources/{sha}` | `GET` | — | Metadata record for a specific resource SHA-256 |
 | `/download/{sha}` | `GET` | — | HTTP 307 redirect to source file (cloud mode) or binary stream (local) |
 | `/mirrors` | `GET` | `refresh=true` | Status and uptime metrics across mirror hosts |
 | `/links` | `GET` | `q`, `platform`, `limit` | Curated outbound link graph (Google Drive, MEGA, etc.) |
 | `/recent` | `GET` | `limit` | Most recently indexed resource entries |
 
-### Search filters:
+### Search filters & ranking:
 - `kind`: `remote` (upstream file), `file` (indexed blob), `link` (external repository/drive)
-- `rtype`: `paper`, `markscheme`, `textbook`, `notes`, `syllabus`, `boundaries`, `specimen`, `exemplar`, `report`
-- `level`: `HL`, `SL`, `MYP`, `CORE`
-- `session`: `may`, `november`
-- `sort`: `rank` (FTS relevancy) or `recent` (chronological)
+- `rtype`: `paper`, `markscheme`, `textbook`, `notes`, `syllabus`, `boundary` (`boundaries` alias supported), `specimen`, `exemplar`, `report`, `questionbank`, `audio`, `predicted`
+- `level`: case-insensitive (`HL`, `SL`, `MYP`, `PYP`, `DP`, `CORE`, `TOK`, `EE`)
+- `session`: `may`, `nov` / `november`, or full e.g. `May 2024`
+- `year`: exact 4-digit year e.g. `2025`
+- `tz`: `TZ0`, `TZ1`, `TZ2`, `TZ3`, `TZA`, `TZB` (shorthand `1` → `TZ1`, `a` → `TZA`)
+- `source`: exact or prefix match (e.g. `xtreme`, `tfm`, `dufs`, `brilliantlearning`, `ibdocs`)
+- `sort`: `rank` (BM25 weighted: `title` > `subject` > metadata > `url`) or `recent` (chronological)
+- **Shorthand expansion:** common IB abbreviations expand across cloud and SQLite FTS5 (`bio`, `chem`, `phys`, `math`/`maths`, `econ`, `psych`, `geo`, `hist`, `cs`, `ess`, `bm`, `tok`, `ms`, `gb`, `qb`, `p1`–`p3`, `p1a`/`p1b`, `m05`–`m29`, `n05`–`n29`).
 
 ## 4. MCP Server (`mcp_server.py`)
 
@@ -67,8 +71,8 @@ Stdio transport for Claude Desktop, Cursor, OpenCode, and Windsurf.
 - **Configuration Override:** Set `IB_API_BASE` in the environment to point MCP to any custom instance.
 
 Exposed Tools:
-1. `search(q, kind, limit, rtype, level, year, session)`: Multi-facet full-text search.
-2. `facets(q, kind)`: Get counts by resource type and syllabus level.
+1. `search(q, kind, limit, rtype, level, year, session, tz, source)`: Multi-facet full-text search (both remote API and local SQLite).
+2. `facets(q, kind, rtype, level, year, session, tz, source)`: Filter-aware counts across types, levels, sessions, years, timezones, and sources.
 3. `resource(sha256)`: Retrieve metadata for a resource.
 4. `download_url(sha256)`: Get the download/redirect URL for retrieving files.
 5. `stats()`: Catalog size and source counts.
@@ -102,7 +106,7 @@ For scraping protected mirrors directly (`scripts/gather.py`):
 
 ## 7. Testing standards
 
-- Run test suite: `pytest tests/ -q` (55 passing tests).
+- Run test suite: `pytest tests/ -q` (66 passing tests).
 - Mock all HTTP interactions (`unittest.mock.patch` / `MagicMock`).
 - No live network calls allowed in unit tests.
 - tmp directories used for filesystem isolation.

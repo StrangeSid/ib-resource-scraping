@@ -33,7 +33,7 @@ def use_cloud() -> bool:
     return not (STORE / "index.sqlite").exists()
 
 
-app = FastAPI(title="ib-resources", version="0.7.0")
+app = FastAPI(title="ib-resources", version="0.8.0")
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -98,62 +98,107 @@ def recent(limit: int = 20):
     return ok(rows, limit=limit, count=len(rows))
 
 
+def _sqlite_where(q: str = "", kind: str = "", rtype: str = "", level: str = "",
+                  session: str = "", year: str = "", tz: str = "",
+                  source: str = "", *, require_q: bool = False) -> tuple[str, list]:
+    """Build parameterized SQLite FTS WHERE clause + args from search/facet filters."""
+    from ib_scrape.search_util import (
+        fts_query, norm_level, norm_rtype, norm_session, norm_tz, norm_year,
+    )
+
+    cond: list[str] = []
+    args: list = []
+    if require_q or q.strip():
+        cond.append("fts MATCH ?")
+        args.append(fts_query(q))
+    if kind.strip():
+        cond.append("kind=?")
+        args.append(kind.strip().lower())
+    rt = norm_rtype(rtype)
+    if rt:
+        cond.append("rtype=?")
+        args.append(rt)
+    lv = norm_level(level)
+    if lv:
+        cond.append("UPPER(level)=?")
+        args.append(lv)
+    sess = norm_session(session)
+    if sess:
+        cond.append("LOWER(sess) LIKE ?")
+        args.append(f"%{sess}%")
+    yr = norm_year(year)
+    if yr:
+        cond.append("yr=?")
+        args.append(yr)
+    tz_norm = norm_tz(tz)
+    if tz_norm:
+        cond.append("UPPER(tz)=?")
+        args.append(tz_norm)
+    src = source.strip().lower()
+    if src:
+        cond.append("(LOWER(source)=? OR LOWER(source) LIKE ?)")
+        args.extend([src, f"{src}:%"])
+    return (" AND ".join(cond) or "1=1"), args
+
+
 @app.get("/search")
 def search(q: str = Query(..., min_length=2),
            kind: str = Query("", pattern="^(file|remote|link|)$"),
            sort: str = Query("rank", pattern="^(rank|recent)$"),
            rtype: str = "", level: str = "", session: str = "", year: str = "",
+           tz: str = "", source: str = "",
            limit: int = 20, offset: int = 0):
     if use_cloud():
         from api import cloud as _cloud
-        rows = _cloud.search(q, kind, rtype, level, session, year,
-                             sort, limit, offset)
+        rows, total = _cloud.search_with_total(
+            q, kind, rtype, level, session, year, tz, source, sort, limit, offset
+        )
         return ok(rows, query=q, kind=kind or "all", sort=sort,
-                  limit=limit, offset=offset, count=len(rows),
+                  limit=limit, offset=offset, count=len(rows), total=total,
                   mode="cloud")
-    from ib_scrape.index_fts import prefix_query
+    from ib_scrape.search_util import FTS_BM25_SQL
     con = db()
-    order = "rank" if sort == "rank" else "ts DESC, rank"
-    cond, args = ["fts MATCH ?"], [prefix_query(q)]
-    for col, val in (("kind", kind), ("rtype", rtype), ("level", level),
-                     ("sess", session), ("yr", year)):
-        if val:
-            cond.append(f"{col}=?")
-            args.append(val)
+    order = FTS_BM25_SQL if sort == "rank" else f"ts DESC, {FTS_BM25_SQL}"
+    where, args = _sqlite_where(
+        q, kind, rtype, level, session, year, tz, source, require_q=True
+    )
     sql = ("SELECT kind,title,url,source,subject,extra,ts,rtype,level,sess,yr,tz,"
-           " rank FROM fts WHERE " + " AND ".join(cond)
-           + f" ORDER BY {order} LIMIT ? OFFSET ?")
+           f" rank FROM fts WHERE {where} ORDER BY {order} LIMIT ? OFFSET ?")
     try:
+        total = con.execute(f"SELECT COUNT(*) FROM fts WHERE {where}", args).fetchone()[0]
         rows = [dict(r) for r in con.execute(sql, args + [limit, offset])]
     except sqlite3.OperationalError:
+        total = 0
         rows = []
+    finally:
+        con.close()
     return ok(rows, query=q, kind=kind or "all", sort=sort,
-              limit=limit, offset=offset, count=len(rows))
+              limit=limit, offset=offset, count=len(rows), total=total)
 
 
 @app.get("/facets")
 def facets(q: str = Query("", max_length=200),
-           kind: str = Query("", pattern="^(file|remote|link|)$")):
+           kind: str = Query("", pattern="^(file|remote|link|)$"),
+           rtype: str = "", level: str = "", session: str = "", year: str = "",
+           tz: str = "", source: str = ""):
     if use_cloud():
         from api import cloud as _cloud
-        return ok(_cloud.facets(q, kind), query=q, kind=kind or "all",
-                  mode="cloud")
-    from ib_scrape.index_fts import prefix_query
+        return ok(
+            _cloud.facets(q, kind, rtype, level, session, year, tz, source),
+            query=q, kind=kind or "all", mode="cloud",
+        )
     con = db()
-    base, args = "1=1", []
-    if q.strip():
-        base, args = "fts MATCH ?", [prefix_query(q)]
-    if kind:
-        base += " AND kind=?"
-        args.append(kind)
+    where, args = _sqlite_where(q, kind, rtype, level, session, year, tz, source)
     out = {}
     try:
-        for col in ("rtype", "level", "sess", "yr", "tz", "kind"):
+        for col in ("rtype", "level", "sess", "yr", "tz", "kind", "source"):
             out[col] = [{"value": v or "—", "count": n} for v, n in con.execute(
-                f"SELECT {col},COUNT(*) FROM fts WHERE {base} AND {col}!=''"
+                f"SELECT {col},COUNT(*) FROM fts WHERE {where} AND {col}!=''"
                 f" GROUP BY {col} ORDER BY 2 DESC LIMIT 25", args)]
     except sqlite3.OperationalError:
         pass
+    finally:
+        con.close()
     return ok(out, query=q, kind=kind or "all")
 
 

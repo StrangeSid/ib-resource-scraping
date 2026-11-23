@@ -6,22 +6,29 @@ import time
 from pathlib import Path
 
 from .classify import classify
+from .search_util import clean_text
 
-YEAR_RE = re.compile(r"(19|20)\d{2}")
-SESSION_MONTH = {"may": "05", "november": "11", "may-2025": "05"}
+YEAR_RE = re.compile(r"(?:19|20)\d{2}")
+SESSION_MONTH = {"may": "05", "november": "11", "nov": "11"}
 
 
 def ts_of(url="", year="", session="", explicit=""):
     """Best-effort ISO date for sorting. Explicit > year+session > URL year."""
     if explicit and re.match(r"\d{4}-\d{2}", explicit):
         return explicit[:10]
-    if re.fullmatch(r"\d{4}", str(year or "")):
+    yr = str(year or "").strip()
+    sess = str(session or "").strip().lower()
+    if not re.fullmatch(r"\d{4}", yr) and sess:
+        ym = YEAR_RE.search(sess)
+        if ym:
+            yr = ym.group(0)
+    if re.fullmatch(r"\d{4}", yr):
         m = "01"
         for key, mon in SESSION_MONTH.items():
-            if key in str(session or "").lower():
+            if key in sess:
                 m = mon
                 break
-        return f"{year}-{m}-01"
+        return f"{yr}-{m}-01"
     m = YEAR_RE.search(f"{url}")
     return f"{m.group(0)}-01-01" if m else ""
 
@@ -79,24 +86,28 @@ def build(store_root, manifests_dir):
                " subject, extra, ts, rtype, level, sess, yr, tz,"
                " tokenize='porter')")
 
-    def cls(title, url, subject):
-        c = classify(title, url, subject)
-        return c["rtype"], c["level"], c["session"], c["year"], c["tz"]
-
     rows = []
     for title, url, source, subject, extra, ts in db.execute(
             "SELECT filename,url,source,subject,sha256,fetched_at FROM files"):
-        c = classify(title, url, subject)
-        rows.append(("file", title, url, source, subject, extra,
-                     ts_of(url) or ts, c["rtype"], c["level"],
+        title_c = clean_text(title)
+        subj_c = clean_text(subject)
+        c = classify(title_c, url, subj_c)
+        row_ts = (ts_of(url, c["year"], c["session"])
+                  if (c["year"] and c["session"]) else (ts_of(url) or ts))
+        rows.append(("file", title_c, url, source, subj_c, extra,
+                     row_ts, c["rtype"], c["level"],
                      c["session"], c["year"], c["tz"]))
     for url, source, name, size, year, session, parent, _f, ts in db.execute(
             "SELECT url,source,name,size,year,session,parent,fetched_at,ts"
             " FROM remote_files"):
-        subj = f"{year} {session} {parent}"
-        c = classify(name, url, subj)
-        rows.append(("remote", name, url, source, subj, "",
-                     ts, c["rtype"], c["level"],
+        title_c = clean_text(name)
+        subj_c = clean_text(f"{year} {session} {parent}")
+        c = classify(title_c, url, subj_c)
+        row_ts = (ts_of(url, c["year"], c["session"])
+                  if (c["year"] and c["session"])
+                  else ts_of(url, c["year"] or year, c["session"] or session, explicit=ts))
+        rows.append(("remote", title_c, url, source, subj_c, "",
+                     row_ts, c["rtype"], c["level"],
                      c["session"] or session, c["year"] or year, c["tz"]))
     for url, host, plat in db.execute("SELECT url,host,platform FROM links"):
         rows.append(("link", url, url, plat, host, "", "", "other", "", "", "", ""))

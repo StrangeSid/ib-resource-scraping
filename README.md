@@ -1,6 +1,6 @@
 # ib-resource-scraping
 
-One searchable index of **53,000+ IB resources** across the web — past papers, markschemes, grade boundaries, question banks, textbooks, and notes — instead of a dozen disconnected mirrors.
+One searchable index of **53,900+ IB resources** across the web — past papers, markschemes, grade boundaries, question banks, textbooks, and notes — instead of a dozen disconnected mirrors.
 
 Hosted live index: **[https://ib-scrape.sidevv.xyz](https://ib-scrape.sidevv.xyz)**  
 Web interface: **[https://ib-scrape.sidevv.xyz/](https://ib-scrape.sidevv.xyz/)**
@@ -20,8 +20,8 @@ The API is deployed and ready to query with zero local setup:
 
 | Endpoint | Method | Params | Description |
 |---|---|---|---|
-| `/search` | `GET` | `q`, `rtype`, `level`, `session`, `year`, `limit` | Ranked full-text search across 53k+ resources |
-| `/facets` | `GET` | `q`, `kind` | Resource aggregation counts (types, levels, sessions) |
+| `/search` | `GET` | `q`, `kind`, `rtype`, `level`, `session`, `year`, `tz`, `source`, `sort`, `limit`, `offset` | Ranked full-text search across 53k+ resources (`meta.total` included) |
+| `/facets` | `GET` | `q`, `kind`, `rtype`, `level`, `session`, `year`, `tz`, `source` | Filter-aware aggregation counts (`rtype`, `level`, `sess`, `yr`, `tz`, `kind`, `source`) |
 | `/resources/{sha}` | `GET` | — | Metadata record for a specific resource SHA-256 |
 | `/download/{sha}` | `GET` | — | HTTP 307 redirect straight to upstream file host |
 | `/stats` | `GET` | — | Catalog size, source counts, and index health |
@@ -120,8 +120,8 @@ claude mcp add ib-resources -- python3 /path/to/ib-resource-scraping/mcp_server.
 
 ### MCP Tools Available
 
-- `search(q, rtype, level, year, session, limit)` — Full-text search over papers, markschemes, and notes.
-- `facets(q, kind)` — Breakdown of resource counts across types and syllabus levels.
+- `search(q, kind, limit, rtype, level, year, session, tz, source)` — Full-text search over papers, markschemes, and notes with shorthand expansion (`bio`, `ms`, `m25`, `cs`, `p1`–`p3`).
+- `facets(q, kind, rtype, level, year, session, tz, source)` — Breakdown of resource counts across types, syllabus levels, years, timezones, and sources.
 - `resource(sha256)` — Retrieve metadata by SHA-256 hash.
 - `download_url(sha256)` — Get the direct download URL for a file.
 - `mirrors(refresh)` — Check health and uptime of IB mirrors.
@@ -194,7 +194,7 @@ The test suite runs entirely offline using mocked HTTP calls:
 ```sh
 ./.venv/bin/pip install -r requirements-dev.txt
 ./.venv/bin/python -m pytest tests/ -q
-# 55 passed in <10s
+# 66 passed in ~10s
 ```
 
 ---

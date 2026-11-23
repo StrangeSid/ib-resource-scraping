@@ -3,6 +3,15 @@
 All notable changes, backdated to the commit that introduced them.
 Dates are commit dates (`git log --format="%ad" --date=short`).
 
+## v0.8.0 — 2026-11-23
+
+- Search relevance & parity (`ib_scrape/search_util.py`): shared text cleaning (`%20` / HTML entity unescaping), IB shorthand & session code expansion (`bio`, `chem`, `phys`, `math`, `cs`, `ms`, `gb`, `qb`, `p1`–`p3`, `m05`–`m29`, `n05`–`n29`), exact matching for short numeric tokens (`1`/`2`/`3` no longer match `2025`), and consistent filter normalizers (`norm_rtype`, `norm_level`, `norm_session`, `norm_year`, `norm_tz`).
+- Cloud search engine (`api/cloud.py`): replaced substring scan with cached inverted index + `bisect_left` prefix lookup + weighted field BM25 (`title` 10.0, `subject` 4.0, metadata 2.0, `url` 1.0), prefix IDF capping, `search_with_total()`, and `source` facets.
+- SQLite FTS5 & classifier (`ib_scrape/classify.py`, `ib_scrape/index_fts.py`): added `-ms` markscheme, `p1`/`p2`/`p3`/`p1a`/`p1b` paper, `m25`/`n22`/`m2026`/`Nov-2023` session/year (filename priority over upload URL), and `TZA`/`TZB` detection; weighted `bm25(...)` ranking in `api/main.py`.
+- API & MCP parity (`api/main.py`, `mcp_server.py`): added `tz` and `source` filters, filter-aware `/facets`, `meta.total` in `/search`, and full local SQLite filter + facet support in `mcp_server.py`.
+- Web UI (`ui/index.html`): added `Year`, `Timezone`, `Source` dropdowns, `Clear filters`, URL query state sync/restore, total hit range display, `<mark>` term highlighting, metadata chips, `AbortController` concurrent fetches, and `/` / `Escape` shortcuts.
+- Catalog refresh: WP `4,692` (+173 new, 932 `_pda` URL updates), Xtreme `23,594` (+1), `53,905` cloud records, `65,429` local FTS rows. 66 unit tests green.
+
 ## v0.7.0 — 2026-10-13
 
 - Hosted public index & API deployed at `https://ib-scrape.sidevv.xyz`.

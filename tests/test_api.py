@@ -85,21 +85,48 @@ def test_search_filters_and_facets(client):
     import api.main as M2
     db = sqlite3.connect(M2.STORE / "index.sqlite")
     db.execute("INSERT INTO remote_files VALUES (?,?,?,?,?,?,?,?,?)",
-               ("http://x/hl-ms", "t", "History HL markscheme", "", "2025",
-                "may-2025", "", "2026-01-01", ""))
+               ("http://x/hl-ms", "ibdocs:sub", "History HL TZ1 markscheme", "", "2025",
+                "nov-2025", "", "2026-01-01", ""))
+    db.execute("INSERT INTO remote_files VALUES (?,?,?,?,?,?,?,?,?)",
+               ("http://x/bio-ms", "ibdocs", "Biology HL TZ2 markscheme", "", "2024",
+                "may-2024", "", "2026-01-01", ""))
+    db.execute("INSERT INTO remote_files VALUES (?,?,?,?,?,?,?,?,?)",
+               ("http://x/bio-terms", "other", "Biology HL Command Terms", "", "2024",
+                "may-2024", "", "2026-01-01", ""))
     db.commit()
     from ib_scrape import index_fts
     index_fts.build(M2.STORE, M2.MDIR)
-    hits = client.get("/search", params={"q": "history", "rtype": "markscheme"}).json()["data"]
-    assert hits and all(h["rtype"] == "markscheme" for h in hits)
-    hits = client.get("/search", params={"q": "history", "level": "HL"}).json()["data"]
+
+    res = client.get("/search", params={"q": "history", "rtype": "markschemes"}).json()
+    assert res["meta"]["total"] == 1
+    assert res["data"] and all(h["rtype"] == "markscheme" for h in res["data"])
+
+    hits = client.get("/search", params={"q": "history", "level": "hl"}).json()["data"]
     assert hits and all(h["level"] == "HL" for h in hits)
+
+    hits = client.get("/search", params={"q": "history", "tz": "1", "session": "nov", "year": "2025"}).json()["data"]
+    assert len(hits) == 1 and hits[0]["tz"] == "TZ1"
+
+    hits = client.get("/search", params={"q": "history", "source": "ibdocs"}).json()["data"]
+    assert len(hits) == 1 and hits[0]["source"] == "ibdocs:sub"
+
     hits = client.get("/search", params={"q": "history", "rtype": "paper"}).json()["data"]
     assert hits == []
-    f = client.get("/facets", params={"q": "history"}).json()["data"]
+
+    # Synonym expansion + no substring false positive on Command Terms
+    bio_res = client.get("/search", params={"q": "bio hl ms"}).json()
+    assert bio_res["meta"]["total"] == 1
+    assert bio_res["data"][0]["title"] == "Biology HL TZ2 markscheme"
+
+    # Pagination preserves total
+    paged = client.get("/search", params={"q": "biology", "limit": 1, "offset": 1}).json()
+    assert paged["meta"]["count"] == 1 and paged["meta"]["total"] == 2
+
+    f = client.get("/facets", params={"q": "history", "source": "ibdocs", "tz": "1"}).json()["data"]
     assert any(o["value"] == "markscheme" for o in f["rtype"])
+    assert any(o["value"] == "ibdocs:sub" for o in f["source"])
     fall = client.get("/facets").json()["data"]
-    assert "yr" in fall and "level" in fall
+    assert "yr" in fall and "level" in fall and "source" in fall
 
 
 def test_ui_served():

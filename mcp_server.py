@@ -64,27 +64,73 @@ def _http_get(path: str, params: dict | None = None):
         return {"error": str(e)}
 
 
+def _sqlite_where(q: str = "", kind: str = "", rtype: str = "", level: str = "",
+                  year: str = "", session: str = "", tz: str = "",
+                  source: str = "", *, require_q: bool = False) -> tuple[str, list]:
+    """Build parameterized SQLite FTS WHERE clause + args matching api/main.py."""
+    from ib_scrape.search_util import (
+        fts_query, norm_level, norm_rtype, norm_session, norm_tz, norm_year,
+    )
+
+    cond: list[str] = []
+    args: list = []
+    if require_q or q.strip():
+        cond.append("fts MATCH ?")
+        args.append(fts_query(q))
+    if kind.strip():
+        cond.append("kind=?")
+        args.append(kind.strip().lower())
+    rt = norm_rtype(rtype)
+    if rt:
+        cond.append("rtype=?")
+        args.append(rt)
+    lv = norm_level(level)
+    if lv:
+        cond.append("UPPER(level)=?")
+        args.append(lv)
+    sess = norm_session(session)
+    if sess:
+        cond.append("LOWER(sess) LIKE ?")
+        args.append(f"%{sess}%")
+    yr = norm_year(year)
+    if yr:
+        cond.append("yr=?")
+        args.append(yr)
+    tz_norm = norm_tz(tz)
+    if tz_norm:
+        cond.append("UPPER(tz)=?")
+        args.append(tz_norm)
+    src = source.strip().lower()
+    if src:
+        cond.append("(LOWER(source)=? OR LOWER(source) LIKE ?)")
+        args.extend([src, f"{src}:%"])
+    return (" AND ".join(cond) or "1=1"), args
+
+
 def search(q: str, kind: str = "", limit: int = 20, rtype: str = "",
-           level: str = "", year: str = "", session: str = "") -> list:
+           level: str = "", year: str = "", session: str = "",
+           tz: str = "", source: str = "") -> list:
     """Full-text search. kind: file|remote|link|all(empty). Supports facet filters."""
     if _remote_base():
         res = _http_get("/search", {
             "q": q, "kind": kind, "limit": limit,
             "rtype": rtype, "level": level, "year": year, "session": session,
+            "tz": tz, "source": source,
         })
         return res if isinstance(res, list) else []
+    from ib_scrape.search_util import FTS_BM25_SQL
     con = _db()
-    cond, args = ["fts MATCH ?"], [q]
-    if kind:
-        cond.append("kind=?")
-        args.append(kind)
-    sql = ("SELECT kind,title,url,source,subject FROM fts WHERE "
-           + " AND ".join(cond)
-           + " ORDER BY rank LIMIT ?")
+    where, args = _sqlite_where(
+        q, kind, rtype, level, year, session, tz, source, require_q=True
+    )
+    sql = ("SELECT kind,title,url,source,subject,ts,rtype,level,sess,yr,tz"
+           f" FROM fts WHERE {where} ORDER BY {FTS_BM25_SQL} LIMIT ?")
     try:
         return [dict(r) for r in con.execute(sql, args + [limit])]
     except sqlite3.OperationalError:
         return []
+    finally:
+        con.close()
 
 
 def resource(sha256: str) -> dict:
@@ -141,12 +187,29 @@ def links(q: str = "", platform: str = "", limit: int = 20) -> list:
         return []
 
 
-def facets(q: str = "", kind: str = "") -> dict:
-    """Breakdown by resource type, level, session, and year."""
+def facets(q: str = "", kind: str = "", rtype: str = "", level: str = "",
+           year: str = "", session: str = "", tz: str = "",
+           source: str = "") -> dict:
+    """Breakdown by resource type, level, session, timezone, year, kind, and source."""
     if _remote_base():
-        res = _http_get("/facets", {"q": q, "kind": kind})
+        res = _http_get("/facets", {
+            "q": q, "kind": kind, "rtype": rtype, "level": level,
+            "year": year, "session": session, "tz": tz, "source": source,
+        })
         return res if isinstance(res, dict) else {}
-    return {}
+    con = _db()
+    where, args = _sqlite_where(q, kind, rtype, level, year, session, tz, source)
+    out = {}
+    try:
+        for col in ("rtype", "level", "sess", "yr", "tz", "kind", "source"):
+            out[col] = [{"value": v or "—", "count": n} for v, n in con.execute(
+                f"SELECT {col},COUNT(*) FROM fts WHERE {where} AND {col}!=''"
+                f" GROUP BY {col} ORDER BY 2 DESC LIMIT 25", args)]
+    except sqlite3.OperationalError:
+        return {}
+    finally:
+        con.close()
+    return out
 
 
 mcp = FastMCP("ib-resources")

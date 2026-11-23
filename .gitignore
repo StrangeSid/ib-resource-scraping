@@ -2,6 +2,7 @@ store/
 __pycache__/
 *.pyc
 .venv/
+.pytest_cache/
 cookies.txt
 downloaded_files/
 .vercel

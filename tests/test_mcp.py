@@ -84,6 +84,37 @@ def test_mcp_stdio_transport(tmp_path, monkeypatch):
     assert len(hits) == 1 and hits[0]["title"] == "biology-notes"
 
 
+def test_mcp_local_search_filters_and_facets(tmp_path, monkeypatch):
+    import sqlite3
+    _seed(tmp_path, monkeypatch)
+    db = sqlite3.connect(tmp_path / "store" / "index.sqlite")
+    db.execute("INSERT INTO remote_files VALUES (?,?,?,?,?,?,?,?,?)",
+               ("http://x/bio-ms", "ibdocs:sub", "Biology HL TZ1 markscheme", "", "2024",
+                "nov-2024", "", "2026-01-01", ""))
+    db.execute("INSERT INTO remote_files VALUES (?,?,?,?,?,?,?,?,?)",
+               ("http://x/bio-terms", "other", "Biology HL Command Terms", "", "2024",
+                "may-2024", "", "2026-01-01", ""))
+    db.commit()
+    index_fts.build(tmp_path / "store", tmp_path / "manifests")
+
+    hits = M.search("bio hl ms", rtype="markschemes", level="hl",
+                    year="2024", session="nov", tz="1", source="ibdocs")
+    assert len(hits) == 1
+    h = hits[0]
+    assert h["title"] == "Biology HL TZ1 markscheme"
+    assert set(h.keys()) == {
+        "kind", "title", "url", "source", "subject",
+        "ts", "rtype", "level", "sess", "yr", "tz",
+    }
+    assert h["rtype"] == "markscheme" and h["level"] == "HL" and h["tz"] == "TZ1"
+
+    f = M.facets(q="biology", tz="1", source="ibdocs")
+    assert f["rtype"] == [{"value": "markscheme", "count": 1}]
+    assert f["source"] == [{"value": "ibdocs:sub", "count": 1}]
+    assert f["tz"] == [{"value": "TZ1", "count": 1}]
+    assert "kind" in f and "yr" in f and "level" in f and "sess" in f
+
+
 def test_mcp_remote_mode(monkeypatch):
     import io
     import urllib.error
@@ -98,9 +129,11 @@ def test_mcp_remote_mode(monkeypatch):
         "/links": {"status": "ok", "data": [{"url": "http://gdrive"}]},
         "/facets": {"status": "ok", "data": {"rtype": [{"value": "paper", "count": 10}]}},
     }
+    seen_urls = []
 
     def fake_urlopen(req, timeout=15):
         url = req.full_url
+        seen_urls.append(url)
         for path, data in mock_responses.items():
             if path in url:
                 resp = MagicMock()
@@ -110,10 +143,14 @@ def test_mcp_remote_mode(monkeypatch):
         raise urllib.error.HTTPError(url, 404, "Not Found", {}, io.BytesIO(b""))
 
     with patch("urllib.request.urlopen", side_effect=fake_urlopen):
-        assert M.search("bio")[0]["title"] == "Remote Bio"
+        assert M.search("bio", tz="1", source="ibdocs")[0]["title"] == "Remote Bio"
         assert M.resource("abc")["filename"] == "bio.pdf"
         assert M.stats()["files"] == 42
         assert M.mirrors()[0]["name"] == "mock-mirror"
         assert M.links()[0]["url"] == "http://gdrive"
-        assert M.facets()["rtype"][0]["count"] == 10
+        assert M.facets(q="phys", rtype="paper", tz="1", source="ibdocs")["rtype"][0]["count"] == 10
         assert M.download_url("abc")["url"] == "https://mock-api.local/download/abc"
+
+    assert any("tz=1" in u and "source=ibdocs" in u for u in seen_urls if "/search" in u)
+    assert any("rtype=paper" in u and "tz=1" in u and "source=ibdocs" in u
+               for u in seen_urls if "/facets" in u)

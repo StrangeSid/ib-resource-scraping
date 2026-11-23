@@ -25,10 +25,13 @@ Default base URL: `https://ib-scrape.sidevv.xyz` (or `localhost:8471` locally).
 All API responses follow the envelope schema: `{status, data, meta}`.
 Resource kinds: `remote` (cataloged upstream), `file` (indexed blob), `link` (curated link graph).
 Available facets / filters:
-- `rtype`: `paper`, `markscheme`, `textbook`, `notes`, `syllabus`, `boundaries`, `specimen`, `exemplar`, `report`
-- `level`: `HL`, `SL`, `MYP`, `CORE`
-- `session`: `may`, `november`
-- `year`: e.g. `2024`, `2023`, `2018`
+- `rtype`: `paper`, `markscheme`, `textbook`, `notes`, `syllabus`, `boundary` (`boundaries`), `specimen`, `exemplar`, `report`, `questionbank`, `audio`, `predicted`
+- `level`: case-insensitive (`HL`, `SL`, `MYP`, `PYP`, `DP`, `CORE`, `TOK`, `EE`)
+- `session`: `may`, `nov` / `november`
+- `year`: e.g. `2025`, `2024`, `2018`
+- `tz`: `TZ0`–`TZ3`, `TZA`, `TZB` (`1` → `TZ1`, `a` → `TZA`)
+- `source`: exact or prefix (e.g. `xtreme`, `tfm`, `dufs`, `brilliantlearning`, `ibdocs`)
+- Shorthand queries supported: e.g. `"bio hl ms"`, `"m25 cs"`, `"math aa p2 tz1"`.
 
 ## Agentic use: MCP server
 
@@ -38,8 +41,8 @@ IB_API_BASE=https://ib-scrape.sidevv.xyz python mcp_server.py
 ```
 
 Tools exposed:
-- `search(q, kind="", limit=20, rtype="", level="", year="", session="")`
-- `facets(q="", kind="")`
+- `search(q, kind="", limit=20, rtype="", level="", year="", session="", tz="", source="")`
+- `facets(q="", kind="", rtype="", level="", year="", session="", tz="", source="")`
 - `resource(sha256)`
 - `download_url(sha256)`
 - `stats()`
