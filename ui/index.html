@@ -43,6 +43,7 @@
     color: var(--ink);
   }
   input[type="search"]:focus-visible,
+  input[type="radio"]:focus-visible,
   select:focus-visible,
   button:focus-visible,
   a:focus-visible {
@@ -60,42 +61,171 @@
     cursor: pointer;
   }
   button:disabled { opacity: 0.45; cursor: not-allowed; }
-  .kinds {
+  .controls-bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
     gap: 10px 16px;
     margin: 0 0 14px;
     color: var(--faint);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
   }
-  .kinds label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
-  .kinds select {
-    font: inherit;
-    font-size: 0.9rem;
-    padding: 4px 8px;
-    border: 1.5px solid var(--rule);
-    border-radius: 3px;
-    background: #fff;
-    color: var(--ink);
-    max-width: 190px;
+  .kind-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
   }
-  #filters {
-    margin-bottom: 20px;
-    padding-top: 10px;
-    border-top: 1px solid var(--rule);
-    gap: 10px 14px;
+  .kind-group label {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    cursor: pointer;
+    padding: 2px 0;
+    transition: color 120ms ease;
   }
-  #clearFilters {
-    background: transparent;
-    color: var(--faint);
-    border: 1.5px solid var(--rule);
-    padding: 4px 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
+  .kind-group label:hover { color: var(--ink); }
+  .kind-group label:has(input:checked) { color: var(--ink); font-weight: 600; }
+  .kind-group input[type="radio"] {
+    margin: 0;
+    accent-color: var(--green);
+    cursor: pointer;
+  }
+  .controls-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     margin-left: auto;
   }
-  #clearFilters:hover { color: var(--ink); border-color: var(--ink); }
+  .sort-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--faint);
+    font-size: 0.88rem;
+  }
+  .sort-wrap > span {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    font-size: 0.88rem;
+    line-height: 1.3;
+    height: 34px;
+    padding: 6px 30px 6px 10px;
+    border: 1.5px solid #d5d1c5;
+    border-radius: 3px;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%236b6f76' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 9px center;
+    background-size: 12px 12px;
+    color: var(--ink);
+    cursor: pointer;
+    text-overflow: ellipsis;
+    transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+  }
+  select:hover:not(:disabled) { border-color: var(--ink); }
+  select:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background-color: #f8f7f3;
+  }
+  select.is-active {
+    border-color: var(--green);
+    background-color: #eef5f1;
+    color: var(--green);
+    font-weight: 600;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%231e4d3b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+  #sort {
+    width: auto;
+    min-width: 146px;
+    height: 32px;
+    font-size: 0.86rem;
+  }
+  #filters {
+    margin: 0 0 18px;
+    padding: 12px 14px 14px;
+    background: #f4f2ea;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+  }
+  .filters-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0 0 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .filters-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .filters-badge {
+    display: none;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    padding: 1px 7px;
+    border-radius: 3px;
+    background: var(--green);
+    color: #fff;
+  }
+  .filters-badge.is-visible { display: inline-block; }
+  .filters-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 12px;
+  }
+  .filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    cursor: pointer;
+  }
+  .filter-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--faint);
+    transition: color 120ms ease;
+  }
+  .filter-field.is-active .filter-label { color: var(--green); }
+  .filter-field select { width: 100%; min-width: 0; }
+  #clearFilters {
+    background: #fff;
+    color: var(--ink);
+    border: 1.5px solid #d5d1c5;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.3;
+    transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+  }
+  #clearFilters:hover:not(:disabled) {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: #fff;
+  }
+  #clearFilters:disabled { color: var(--faint); }
   #meta {
     color: var(--faint);
     font-size: 0.95rem;
@@ -188,11 +318,17 @@
   }
   .dl { font-size: 0.88rem; font-weight: 500; margin-left: 8px; color: var(--green); }
   footer { margin-top: 40px; color: var(--faint); font-size: 0.9rem; border-top: 1px solid var(--rule); padding-top: 12px; }
+  @media (max-width: 680px) {
+    .filters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .controls-right { margin-left: 0; width: 100%; justify-content: space-between; }
+    .kbd-hint { display: none; }
+  }
   @media (max-width: 560px) {
     form { flex-direction: column; }
     form button[type="submit"] { width: 100%; }
-    #clearFilters { margin-left: 0; }
-    .kbd-hint { display: none; }
+  }
+  @media (max-width: 380px) {
+    .filters-grid { grid-template-columns: 1fr; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
@@ -208,27 +344,36 @@
     <input id="q" type="search" name="q" placeholder="e.g. physics paper 2 TZ1 markscheme" aria-label="Search the index" autocomplete="off">
     <button type="submit">Search</button>
   </form>
-  <div class="kinds" role="radiogroup" aria-label="Result kind">
-    <label><input type="radio" name="kind" value="" checked>Everything</label>
-    <label><input type="radio" name="kind" value="file">Downloaded</label>
-    <label><input type="radio" name="kind" value="remote">Catalog only</label>
-    <label><input type="radio" name="kind" value="link">Link graph</label>
-    <label>Sort
-      <select id="sort" aria-label="Sort order">
-        <option value="rank">Most relevant</option>
-        <option value="recent">Newest first</option>
-      </select>
-    </label>
-    <span class="kbd-hint">Press <kbd>/</kbd> to focus</span>
+  <div class="controls-bar">
+    <div class="kind-group" role="radiogroup" aria-label="Result kind">
+      <label><input type="radio" name="kind" value="" checked>Everything</label>
+      <label><input type="radio" name="kind" value="file">Downloaded</label>
+      <label><input type="radio" name="kind" value="remote">Catalog only</label>
+      <label><input type="radio" name="kind" value="link">Link graph</label>
+    </div>
+    <div class="controls-right">
+      <label class="sort-wrap"><span>Sort</span>
+        <select id="sort" aria-label="Sort order">
+          <option value="rank">Most relevant</option>
+          <option value="recent">Newest first</option>
+        </select>
+      </label>
+      <span class="kbd-hint">Press <kbd>/</kbd> to focus</span>
+    </div>
   </div>
-  <div class="kinds" id="filters" style="display:none" aria-label="Filters">
-    <label>Type <select id="f_rtype" aria-label="Resource type"></select></label>
-    <label>Level <select id="f_level" aria-label="Level"></select></label>
-    <label>Session <select id="f_sess" aria-label="Session"></select></label>
-    <label>Year <select id="f_yr" aria-label="Year"></select></label>
-    <label>Timezone <select id="f_tz" aria-label="Timezone"></select></label>
-    <label>Source <select id="f_source" aria-label="Source"></select></label>
-    <button id="clearFilters" type="button">Clear filters</button>
+  <div id="filters" style="display:none" role="region" aria-label="Filters">
+    <div class="filters-head">
+      <span class="filters-title">Filter shelf <span class="filters-badge" id="filtersBadge"></span></span>
+      <button id="clearFilters" type="button" disabled>Clear filters</button>
+    </div>
+    <div class="filters-grid">
+      <label class="filter-field"><span class="filter-label">Type</span><select id="f_rtype" aria-label="Resource type"></select></label>
+      <label class="filter-field"><span class="filter-label">Level</span><select id="f_level" aria-label="Level"></select></label>
+      <label class="filter-field"><span class="filter-label">Session</span><select id="f_sess" aria-label="Session"></select></label>
+      <label class="filter-field"><span class="filter-label">Year</span><select id="f_yr" aria-label="Year"></select></label>
+      <label class="filter-field"><span class="filter-label">Timezone</span><select id="f_tz" aria-label="Timezone"></select></label>
+      <label class="filter-field"><span class="filter-label">Source</span><select id="f_source" aria-label="Source"></select></label>
+    </div>
   </div>
   <p id="meta" aria-live="polite">Type two or more characters to search the index.</p>
   <ol id="results"></ol>
@@ -340,14 +485,50 @@ function syncUrl(offset = 0) {
   try { history.replaceState(null, "", next); } catch {}
 }
 
-function ensureOption(sel, val) {
+function formatFacetLabel(key, raw) {
+  const val = decodeDisplay(raw);
+  if (!val) return "";
+  if (key === "rtype") {
+    if (val === "questionbank") return "Question bank";
+    return val.charAt(0).toUpperCase() + val.slice(1);
+  }
+  if (key === "source") {
+    if (val === "google_docs") return "Google Docs";
+    const m = val.match(/^([a-z0-9_-]+):https?:\/\/([^/]+)\/?(.*)$/i);
+    if (m) return `${m[2]}${m[3] ? "/" + m[3] : ""} (${m[1]})`;
+  }
+  return val;
+}
+
+function ensureOption(sel, val, key = "") {
   if (!val) return;
   if (![...sel.options].some((o) => o.value === val)) {
     const opt = document.createElement("option");
     opt.value = val;
-    opt.textContent = decodeDisplay(val);
+    opt.textContent = formatFacetLabel(key, val);
     sel.appendChild(opt);
   }
+}
+
+function syncFilterUI() {
+  let activeFilters = 0;
+  for (const [id] of FILTERS) {
+    const sel = $(id);
+    const active = Boolean(sel.value);
+    if (active) activeFilters += 1;
+    sel.classList.toggle("is-active", active);
+    const field = sel.closest(".filter-field");
+    if (field) field.classList.toggle("is-active", active);
+  }
+  const sortEl = $("sort");
+  sortEl.classList.toggle("is-active", sortEl.value !== "rank");
+  const badge = $("filtersBadge");
+  if (badge) {
+    badge.textContent = activeFilters ? `${activeFilters} active` : "";
+    badge.classList.toggle("is-visible", activeFilters > 0);
+  }
+  const hasAnyResettable = activeFilters > 0 || selectedKind() !== "" || sortEl.value !== "rank";
+  $("clearFilters").disabled = !hasAnyResettable;
 }
 
 function restoreFromUrl() {
@@ -363,15 +544,16 @@ function restoreFromUrl() {
   const sort = p.get("sort");
   if (sort === "rank" || sort === "recent") $("sort").value = sort;
   let hasFilter = false;
-  for (const [id, param] of FILTERS) {
+  for (const [id, param, key] of FILTERS) {
     const val = p.get(param);
     if (val) {
-      ensureOption($(id), val);
+      ensureOption($(id), val, key);
       $(id).value = val;
       hasFilter = true;
     }
   }
-  if (hasFilter) $("filters").style.display = "flex";
+  if (hasFilter) $("filters").style.display = "block";
+  syncFilterUI();
   const offset = Math.max(0, parseInt(p.get("offset") || "0", 10) || 0);
   return { q: (q || "").trim(), offset };
 }
@@ -473,18 +655,21 @@ async function facets() {
     const cur = sel.value;
     const opts = (d[key] || []).slice(0, 20);
     sel.innerHTML = `<option value="">All</option>` + opts.map((o) =>
-      `<option value="${esc(o.value)}">${esc(decodeDisplay(o.value))} (${o.count})</option>`).join("");
+      `<option value="${esc(o.value)}">${esc(formatFacetLabel(key, o.value))} (${Number(o.count).toLocaleString()})</option>`).join("");
     if (cur) {
-      ensureOption(sel, cur);
+      ensureOption(sel, cur, key);
       sel.value = cur;
     }
+    sel.disabled = opts.length === 0 && !cur;
     if (opts.length || cur) any = true;
   }
-  $("filters").style.display = any ? "flex" : "none";
+  $("filters").style.display = any ? "block" : "none";
+  syncFilterUI();
 }
 
 async function run(offset = 0) {
   const q = $("q").value.trim();
+  syncFilterUI();
   syncUrl(offset);
   if (q.length < 2) {
     if (searchCtrl) { searchCtrl.abort(); searchCtrl = null; }
